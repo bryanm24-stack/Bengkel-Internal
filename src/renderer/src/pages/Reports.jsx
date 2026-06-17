@@ -56,7 +56,7 @@ export default function Reports() {
     )
 
   const kesiapan =
-    Array.isArray(data?.kesiapan_armada) && data.kesiapan_armada[0] ? data.kesiapan_armada[0] : null
+    Array.isArray(data?.kesiapan_kendaraan) && data.kesiapan_kendaraan[0] ? data.kesiapan_kendaraan[0] : null
 
   return (
     <Container className="report-print-area" sx={{ py: 3 }}>
@@ -69,7 +69,7 @@ export default function Reports() {
 
       <Box sx={{ mt: 2 }} component={Paper} variant="outlined">
         <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle1">Kesiapan Armada</Typography>
+          <Typography variant="subtitle1">Kesiapan kendaraan</Typography>
           {kesiapan ? (
             <Table size="small">
               <TableBody>
