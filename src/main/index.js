@@ -2,7 +2,13 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import {} from './model'
+import {
+  getCategories,
+  getSukuByKategori,
+  login,
+  addSukuCadang,
+
+} from './model'
 import fs from 'fs'
 
 function createWindow() {
@@ -54,8 +60,42 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  
-  
+  // Maintenance system handlers
+ 
+  ipcMain.handle('getSukuByKategori', getSukuByKategori)
+  ipcMain.handle('login', login) 
+  ipcMain.handle('addSukuCadang', addSukuCadang)
+
+
+  ipcMain.handle('printPDF', async (event) => {
+    const { canceled, filePath: savePath } = await dialog.showSaveDialog({
+      title: 'Save report',
+      defaultPath: 'report.pdf'
+    })
+
+    if (canceled || !savePath) {
+      return { success: false, canceled: true }
+    }
+
+    const win = BrowserWindow.fromWebContents(event.sender)
+    try {
+      const data = await win.webContents.printToPDF({ printBackground: true, pageSize: 'A4' })
+      await fs.promises.writeFile(savePath, data)
+      return { success: true, path: savePath }
+    } catch (err) {
+      const message = err?.message || 'Failed to generate PDF'
+      const locked = err?.code === 'EBUSY' || err?.code === 'EPERM' || err?.code === 'EACCES'
+      if (locked) {
+        return {
+          success: false,
+          canceled: false,
+          error: `File sedang digunakan atau terkunci: ${savePath}. Tutup file tersebut dan coba lagi.`
+        }
+      }
+      return { success: false, canceled: false, error: message }
+    }
+  })
+
   createWindow()
 
   app.on('activate', function () {
