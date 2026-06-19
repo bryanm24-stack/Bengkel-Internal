@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Container, Typography, Box, TextField, Button, Snackbar, Alert } from '@mui/material'
+import { Container, Typography, Box, TextField, Button, Snackbar, Alert, Paper } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 
 export default function AddVehicle() {
@@ -14,7 +14,7 @@ export default function AddVehicle() {
     setLoading(true)
     try {
       await window.api.addKendaraan(form)
-      setToast({ open: true, message: 'Kendaraan ditambahkan', severity: 'success' })
+      setToast({ open: true, message: 'Kendaraan berhasil ditambahkan', severity: 'success' })
       setTimeout(() => navigate('/'), 700)
     } catch (err) {
       setToast({ open: true, message: err.message || String(err), severity: 'error' })
@@ -23,42 +23,140 @@ export default function AddVehicle() {
     }
   }
 
-  return (
-    <Container sx={{ py: 3 }}>
-      <Typography variant="h5">Tambah Kendaraan</Typography>
-      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
-        <TextField
-          label="Nomor Polisi"
-          value={form.nomor_polisi}
-          onChange={(e) => setForm({ ...form, nomor_polisi: e.target.value })}
-        />
-        <TextField
-          label="Tahun"
-          type="number"
-          value={form.tahun}
-          onChange={(e) => setForm({ ...form, tahun: e.target.value })}
-        />
-        <TextField
-          label="Odometer"
-          type="number"
-          value={form.odometer}
-          onChange={(e) => setForm({ ...form, odometer: parseInt(e.target.value || 0, 10) })}
-        />
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="contained" onClick={submit} disabled={loading}>
-            {loading ? 'Menyimpan...' : 'Simpan'}
-          </Button>
-          <Button onClick={() => navigate(-1)}>Batal</Button>
-        </Box>
-      </Box>
+  // Objek styling kustom Textfield Dark Mode
+  const darkTextFieldStyle = {
+    '& .MuiInputLabel-root': { color: '#888' },
+    '& .MuiInputLabel-root.Mui-focused': { color: '#FFC107' },
+    '& .MuiOutlinedInput-root': {
+      color: '#FFF',
+      backgroundColor: '#2A2A2A',
+      borderRadius: 2,
+      '& fieldset': { borderColor: 'transparent' },
+      '&:hover fieldset': { borderColor: '#555' },
+      '&.Mui-focused fieldset': { borderColor: '#FFC107' },
+    }
+  }
 
-      <Snackbar
-        open={toast.open}
-        autoHideDuration={6000}
-        onClose={() => setToast({ ...toast, open: false })}
-      >
-        <Alert severity={toast.severity}>{toast.message}</Alert>
-      </Snackbar>
-    </Container>
+  return (
+    <Box sx={{ backgroundColor: '#121212', minHeight: '100vh', color: '#FFFFFF', pt: 4, pb: 6 }}>
+      <Container maxWidth="sm">
+        
+        {/* Header Title */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, borderBottom: '2px solid #2A2A2A', pb: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
+            Tambah <span style={{ color: '#FFC107' }}>Kendaraan</span>
+          </Typography>
+        </Box>
+
+        {/* Card Form Box */}
+        <Paper 
+          sx={{ 
+            backgroundColor: '#1E1E1E', 
+            p: 4, 
+            borderRadius: 3, 
+            boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)',
+            borderTop: '5px solid #FFC107'
+          }}
+        >
+          <Typography variant="body2" sx={{ mb: 3, color: '#AAAAAA' }}>
+            Masukkan detail data armada operasional baru di bawah ini.
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="Nomor Polisi"
+              placeholder="Contoh: B 1234 ABC"
+              value={form.nomor_polisi}
+              onChange={(e) => setForm({ ...form, nomor_polisi: e.target.value.toUpperCase() })}
+              sx={darkTextFieldStyle}
+              fullWidth
+            />
+            <TextField
+              label="Tahun Pembuatan"
+              type="number"
+              value={form.tahun}
+              onChange={(e) => setForm({ ...form, tahun: e.target.value })}
+              sx={darkTextFieldStyle}
+              fullWidth
+            />
+            <TextField
+              label="Odometer Utama (Km)"
+              type="number"
+              value={form.odometer}
+              onChange={(e) => setForm({ ...form, odometer: parseInt(e.target.value || 0, 10) })}
+              sx={darkTextFieldStyle}
+              fullWidth
+            />
+
+            {/* Actions Button */}
+            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+              <Button 
+                variant="contained" 
+                onClick={submit} 
+                disabled={loading}
+                sx={{ 
+                  flex: 1,
+                  py: 1.5,
+                  backgroundColor: '#FFC107', 
+                  color: '#000000',
+                  fontWeight: 'bold',
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  boxShadow: '0px 4px 15px rgba(255, 193, 7, 0.2)',
+                  '&:hover': { 
+                    backgroundColor: '#e0a800',
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#555',
+                    color: '#888'
+                  }
+                }}
+              >
+                {loading ? 'Menyimpan...' : 'Simpan'}
+              </Button>
+              
+              <Button 
+                variant="outlined"
+                onClick={() => navigate(-1)}
+                sx={{ 
+                  px: 3,
+                  borderColor: '#555', 
+                  color: '#AAAAAA',
+                  fontWeight: 'bold',
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  '&:hover': { 
+                    borderColor: '#888',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: '#FFF'
+                  }
+                }}
+              >
+                Batal
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Toast Notifikasi */}
+        <Snackbar
+          open={toast.open}
+          autoHideDuration={6000}
+          onClose={() => setToast({ ...toast, open: false })}
+        >
+          <Alert 
+            severity={toast.severity}
+            onClose={() => setToast({ ...toast, open: false })}
+            sx={{ 
+              backgroundColor: toast.severity === 'success' ? '#1B5E20' : toast.severity === 'warning' ? '#E65100' : '#4A0000', 
+              color: '#FFF' 
+            }}
+          >
+            {toast.message}
+          </Alert>
+        </Snackbar>
+
+      </Container>
+    </Box>
   )
 }

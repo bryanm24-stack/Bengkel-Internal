@@ -23,6 +23,7 @@ export default function Reports() {
   useEffect(() => {
     load()
   }, [])
+
   const load = async () => {
     setLoading(true)
     try {
@@ -50,180 +51,257 @@ export default function Reports() {
 
   if (loading)
     return (
-      <Container sx={{ py: 3 }}>
-        <CircularProgress />
-      </Container>
+      <Box sx={{ backgroundColor: '#121212', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress sx={{ color: '#FFC107' }} />
+      </Box>
     )
 
   const kesiapan =
     Array.isArray(data?.kesiapan_kendaraan) && data.kesiapan_kendaraan[0] ? data.kesiapan_kendaraan[0] : null
 
+  // reusable style untuk card box
+  const cardStyle = {
+    mt: 3,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 3,
+    boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.3)',
+    border: 'none',
+    overflow: 'hidden'
+  }
+
+  const tableHeadStyle = {
+    backgroundColor: '#2A2A2A'
+  }
+
+  const headerCellStyle = {
+    color: '#FFC107',
+    fontWeight: 'bold',
+    borderBottom: '1px solid #333'
+  }
+
+  const bodyCellStyle = {
+    color: '#FFF',
+    borderBottom: '1px solid #2A2A2A'
+  }
+
   return (
-    <Container className="report-print-area" sx={{ py: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5">Laporan</Typography>
-        <Button className="no-print" variant="contained" onClick={handlePrintPdf}>
-          Cetak PDF
-        </Button>
-      </Box>
-
-      <Box sx={{ mt: 2 }} component={Paper} variant="outlined">
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle1">Kesiapan kendaraan</Typography>
-          {kesiapan ? (
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell>Aktif</TableCell>
-                  <TableCell>{kesiapan.aktif_count}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Diperbaiki</TableCell>
-                  <TableCell>{kesiapan.diperbaiki_count}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Total</TableCell>
-                  <TableCell>{kesiapan.total}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>% Aktif</TableCell>
-                  <TableCell>{kesiapan.pct_aktif}%</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>% Diperbaiki</TableCell>
-                  <TableCell>{kesiapan.pct_diperbaiki}%</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          ) : (
-            <Typography color="text.secondary">Tidak ada data kesiapan kendaraan.</Typography>
-          )}
+    <Box sx={{ 
+      backgroundColor: '#121212', 
+      minHeight: '100vh', 
+      color: '#FFFFFF', 
+      pt: 4, 
+      pb: 6,
+      // CSS khusus untuk mode cetak printer / PDF generator
+      '@media print': {
+        backgroundColor: '#FFF !important',
+        color: '#000 !important',
+        '.no-print': { display: 'none !important' },
+        '.MuiPaper-root': { backgroundColor: '#FFF !important', color: '#000 !important', boxShadow: 'none !important' },
+        '.MuiTableCell-root': { color: '#000 !important', borderColor: '#DDD !important' },
+        '.MuiTableHead-root': { backgroundColor: '#EEE !important' },
+        '.report-title': { color: '#000 !important' }
+      }
+    }}>
+      <Container className="report-print-area" maxWidth="lg">
+        
+        {/* Header Section */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, borderBottom: '2px solid #2A2A2A', pb: 2 }}>
+          <Typography variant="h5" className="report-title" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
+            Laporan <span style={{ color: '#FFC107' }} className="report-title">Sistem Bengkel</span>
+          </Typography>
+          <Button 
+            className="no-print" 
+            variant="contained" 
+            onClick={handlePrintPdf}
+            sx={{
+              backgroundColor: '#FFC107',
+              color: '#000',
+              fontWeight: 'bold',
+              textTransform: 'none',
+              borderRadius: 2,
+              px: 3,
+              boxShadow: '0px 4px 15px rgba(255, 193, 7, 0.3)',
+              '&:hover': { backgroundColor: '#e0a800' }
+            }}
+          >
+            Cetak PDF
+          </Button>
         </Box>
-      </Box>
 
-      <Box sx={{ mt: 3 }} component={Paper} variant="outlined">
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle1">Defisit Inventaris</Typography>
-          {Array.isArray(data?.defisit_inventaris) && data.defisit_inventaris.length > 0 ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Nama</TableCell>
-                  <TableCell>Kategori</TableCell>
-                  <TableCell>Stok</TableCell>
-                  <TableCell>Batas Min</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.defisit_inventaris.map((r) => (
-                  <TableRow key={r.id_suku_cadang}>
-                    <TableCell>{r.id_suku_cadang}</TableCell>
-                    <TableCell>{r.nama}</TableCell>
-                    <TableCell>{r.kategori}</TableCell>
-                    <TableCell>{r.kuantitas_fisik}</TableCell>
-                    <TableCell>{r.batas_minimum}</TableCell>
+        {/* 1. Kesiapan Kendaraan */}
+        <Box sx={cardStyle} component={Paper}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#FFC107', mb: 2 }}>Kesiapan Kendaraan</Typography>
+            {kesiapan ? (
+              <Table size="small">
+                <TableHead sx={tableHeadStyle}>
+                  <TableRow>
+                    <TableCell sx={headerCellStyle}>Indikator</TableCell>
+                    <TableCell sx={headerCellStyle}>Nilai / Jumlah</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <Typography color="text.secondary">
-              Tidak ada suku cadang mendekati atau di bawah batas minimum.
-            </Typography>
-          )}
-        </Box>
-      </Box>
-
-      <Box sx={{ mt: 3 }} component={Paper} variant="outlined">
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle1">Frekuensi Kerusakan</Typography>
-          {Array.isArray(data?.frekuensi_kerusakan) && data.frekuensi_kerusakan.length > 0 ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nomor Polisi</TableCell>
-                  <TableCell>Jumlah Kerusakan</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.frekuensi_kerusakan.map((r) => (
-                  <TableRow key={r.nomor_polisi}>
-                    <TableCell>{r.nomor_polisi}</TableCell>
-                    <TableCell>{r.jumlah_kerusakan}</TableCell>
+                </TableHead>
+                <TableBody>
+                  <TableRow sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                    <TableCell sx={bodyCellStyle}>Aktif</TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, color: '#4CAF50', fontWeight: 'bold' }}>{kesiapan.aktif_count} Unit</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <Typography color="text.secondary">Tidak ada data kerusakan.</Typography>
-          )}
-        </Box>
-      </Box>
-
-      <Box sx={{ mt: 3 }} component={Paper} variant="outlined">
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle1">Distribusi Penugasan Mekanik</Typography>
-          {Array.isArray(data?.distribusi_penugasan) && data.distribusi_penugasan.length > 0 ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID Mekanik</TableCell>
-                  <TableCell>Jumlah Penugasan</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.distribusi_penugasan.map((r) => (
-                  <TableRow key={r.id_mekanik}>
-                    <TableCell>{r.id_mekanik}</TableCell>
-                    <TableCell>{r.jumlah_penugasan}</TableCell>
+                  <TableRow sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                    <TableCell sx={bodyCellStyle}>Diperbaiki</TableCell>
+                    <TableCell sx={{ ...bodyCellStyle, color: '#FFC107', fontWeight: 'bold' }}>{kesiapan.diperbaiki_count} Unit</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <Typography color="text.secondary">Tidak ada distribusi penugasan.</Typography>
-          )}
-        </Box>
-      </Box>
-
-      <Box sx={{ mt: 3 }} component={Paper} variant="outlined">
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle1">Konsumsi Komponen</Typography>
-          {Array.isArray(data?.konsumsi_komponen) && data.konsumsi_komponen.length > 0 ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID Suku</TableCell>
-                  <TableCell>Nama</TableCell>
-                  <TableCell>Total Dipakai</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.konsumsi_komponen.map((r) => (
-                  <TableRow key={r.id_suku_cadang}>
-                    <TableCell>{r.id_suku_cadang}</TableCell>
-                    <TableCell>{r.nama_suku_cadang}</TableCell>
-                    <TableCell>{r.total_dipakai}</TableCell>
+                  <TableRow sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                    <TableCell sx={bodyCellStyle}>Total Armada</TableCell>
+                    <TableCell sx={bodyCellStyle}>{kesiapan.total} Unit</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <Typography color="text.secondary">Tidak ada data konsumsi komponen.</Typography>
-          )}
+                  <TableRow sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                    <TableCell sx={bodyCellStyle}>% Aktif</TableCell>
+                    <TableCell sx={bodyCellStyle}>{kesiapan.pct_aktif}%</TableCell>
+                  </TableRow>
+                  <TableRow sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                    <TableCell sx={bodyCellStyle}>% Diperbaiki</TableCell>
+                    <TableCell sx={bodyCellStyle}>{kesiapan.pct_diperbaiki}%</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography sx={{ color: '#AAAAAA' }}>Tidak ada data kesiapan kendaraan.</Typography>
+            )}
+          </Box>
         </Box>
-      </Box>
-      <Snackbar
-        className="no-print"
-        open={toast.open}
-        autoHideDuration={6000}
-        onClose={() => setToast({ ...toast, open: false })}
-      >
-        <Alert severity={toast.severity} onClose={() => setToast({ ...toast, open: false })}>
-          {toast.message}
-        </Alert>
-      </Snackbar>
-    </Container>
+
+        {/* 2. Defisit Inventaris */}
+        <Box sx={cardStyle} component={Paper}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#FFC107', mb: 2 }}>Defisit Inventaris</Typography>
+            {Array.isArray(data?.defisit_inventaris) && data.defisit_inventaris.length > 0 ? (
+              <Table size="small">
+                <TableHead sx={tableHeadStyle}>
+                  <TableRow>
+                    {['ID', 'Nama Suku Cadang', 'Kategori', 'Stok Fisik', 'Batas Minimum'].map((h) => (
+                      <TableCell key={h} sx={headerCellStyle}>{h}</TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.defisit_inventaris.map((r) => (
+                    <TableRow key={r.id_suku_cadang} sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                      <TableCell sx={bodyCellStyle}>{r.id_suku_cadang}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.nama}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.kategori}</TableCell>
+                      <TableCell sx={{ ...bodyCellStyle, color: '#f44336', fontWeight: 'bold' }}>{r.kuantitas_fisik}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.batas_minimum}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography sx={{ color: '#AAAAAA' }}>
+                Tidak ada suku cadang mendekati atau di bawah batas minimum.
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* 3. Frekuensi Kerusakan */}
+        <Box sx={cardStyle} component={Paper}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#FFC107', mb: 2 }}>Frekuensi Kerusakan Utama</Typography>
+            {Array.isArray(data?.frekuensi_kerusakan) && data.frekuensi_kerusakan.length > 0 ? (
+              <Table size="small">
+                <TableHead sx={tableHeadStyle}>
+                  <TableRow>
+                    <TableCell sx={headerCellStyle}>Nomor Polisi</TableCell>
+                    <TableCell sx={headerCellStyle}>Jumlah Kasus Kerusakan</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.frekuensi_kerusakan.map((r) => (
+                    <TableRow key={r.nomor_polisi} sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                      <TableCell sx={bodyCellStyle}>{r.nomor_polisi}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.jumlah_kerusakan} Kali</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography sx={{ color: '#AAAAAA' }}>Tidak ada data kerusakan.</Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* 4. Distribusi Penugasan */}
+        <Box sx={cardStyle} component={Paper}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#FFC107', mb: 2 }}>Distribusi Penugasan Mekanik</Typography>
+            {Array.isArray(data?.distribusi_penugasan) && data.distribusi_penugasan.length > 0 ? (
+              <Table size="small">
+                <TableHead sx={tableHeadStyle}>
+                  <TableRow>
+                    <TableCell sx={headerCellStyle}>ID Mekanik</TableCell>
+                    <TableCell sx={headerCellStyle}>Jumlah Penugasan</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.distribusi_penugasan.map((r) => (
+                    <TableRow key={r.id_mekanik} sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                      <TableCell sx={bodyCellStyle}>ID: {r.id_mekanik}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.jumlah_penugasan} Tugas</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography sx={{ color: '#AAAAAA' }}>Tidak ada distribusi penugasan.</Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* 5. Konsumsi Komponen */}
+        <Box sx={cardStyle} component={Paper}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#FFC107', mb: 2 }}>Konsumsi Komponen / Sparepart</Typography>
+            {Array.isArray(data?.konsumsi_komponen) && data.konsumsi_komponen.length > 0 ? (
+              <Table size="small">
+                <TableHead sx={tableHeadStyle}>
+                  <TableRow>
+                    <TableCell sx={headerCellStyle}>ID Suku</TableCell>
+                    <TableCell sx={headerCellStyle}>Nama Komponen</TableCell>
+                    <TableCell sx={headerCellStyle}>Total Terpakai</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.konsumsi_komponen.map((r) => (
+                    <TableRow key={r.id_suku_cadang} sx={{ '&:hover': { backgroundColor: '#252525' } }}>
+                      <TableCell sx={bodyCellStyle}>{r.id_suku_cadang}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.nama_suku_cadang}</TableCell>
+                      <TableCell sx={bodyCellStyle}>{r.total_dipakai} Pcs</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography sx={{ color: '#AAAAAA' }}>Tidak ada data konsumsi komponen.</Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* Toast Notification */}
+        <Snackbar
+          className="no-print"
+          open={toast.open}
+          autoHideDuration={6000}
+          onClose={() => setToast({ ...toast, open: false })}
+        >
+          <Alert 
+            severity={toast.severity} 
+            onClose={() => setToast({ ...toast, open: false })}
+            sx={{ backgroundColor: toast.severity === 'error' ? '#4a0000' : '#1e1e1e', color: '#FFF' }}
+          >
+            {toast.message}
+          </Alert>
+        </Snackbar>
+
+      </Container>
+    </Box>
   )
 }
