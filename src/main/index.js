@@ -3,11 +3,21 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {
+  completeRepair,
+  getKendaraan,
   getCategories,
   getSukuByKategori,
+  getReports,
   login,
   addSukuCadang,
-
+  addKendaraan,
+  updateKendaraanStatus,
+  getMechanics,
+  getKendaraanForMekanik,
+  getAssignedRepairByVehicle,
+  assignRepair,
+  addLogPerbaikan,
+  deleteKendaraan
 } from './model'
 import fs from 'fs'
 
@@ -61,11 +71,21 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   // Maintenance system handlers
- 
+  ipcMain.handle('completeRepair', completeRepair)
+  ipcMain.handle('getKendaraan', getKendaraan)
+  ipcMain.handle('getKendaraanForMekanik', getKendaraanForMekanik)
+  ipcMain.handle('getCategories', getCategories)
   ipcMain.handle('getSukuByKategori', getSukuByKategori)
-  ipcMain.handle('login', login) 
+  ipcMain.handle('getReports', getReports)
+  ipcMain.handle('login', login)
+  ipcMain.handle('getMechanics', getMechanics)
+  ipcMain.handle('assignRepair', assignRepair)
+  ipcMain.handle('getAssignedRepairByVehicle', getAssignedRepairByVehicle)
   ipcMain.handle('addSukuCadang', addSukuCadang)
-
+  ipcMain.handle('addKendaraan', addKendaraan)
+  ipcMain.handle('updateKendaraanStatus', updateKendaraanStatus)
+  ipcMain.handle('addLogPerbaikan', addLogPerbaikan)
+  ipcMain.handle('deleteKendaraan', deleteKendaraan)
 
   ipcMain.handle('printPDF', async (event) => {
     const { canceled, filePath: savePath } = await dialog.showSaveDialog({
