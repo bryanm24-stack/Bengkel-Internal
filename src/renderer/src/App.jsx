@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Link } from 'react-router-dom'
 import { Box, Button } from '@mui/material'
 import Login from './pages/Login'
+import Vehicles from './pages/Vehicles'
+import RepairForm from './pages/RepairForm'
+import Reports from './pages/Reports'
 import SpareParts from './pages/SpareParts'
+import AddVehicle from './pages/AddVehicle'
+import MekanikDashboard from './pages/MekanikDashboard'
 import KepalaDashboard from './pages/KepalaDashboard'
 
 export default function App() {
