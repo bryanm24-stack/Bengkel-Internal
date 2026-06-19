@@ -104,59 +104,57 @@ export default function Vehicles({ user }) {
       await loadMechanics()
     }
 
-    const options = mechanics.reduce((acc, item) => {
-      const mechanicId = item.id_user ?? item.id_mekanik
-      if (mechanicId !== undefined && mechanicId !== null) {
-        acc[mechanicId] = `${item.nama} (${item.username})`
-      }
-      return acc
-    }, {})
+    // Membuat HTML custom untuk SweetAlert
+    const mechanicsOptions = mechanics.map(item => {
+      const mechanicId = item.id_user ?? item.id_mekanik;
+      return `<option value="${mechanicId}">${item.nama} (${item.username})</option>`;
+    }).join('');
 
     const result = await Swal.fire({
-      title: 'Pilih mekanik',
-      input: 'select',
-      inputOptions: options,
-      inputPlaceholder: 'Pilih mekanik',
+      title: 'Tugaskan Mekanik & Catatan',
+      html: `
+        <div style="text-align: left; padding: 0 10px;">
+          <label style="color: #AAA; font-size: 14px; font-weight: bold;">Pilih Mekanik:</label>
+          <select id="swal-mekanik" class="swal2-select" style="width: 100%; margin: 5px 0 15px 0; background-color: #2A2A2A; color: #FFF; border: 1px solid #555;">
+            <option value="" disabled selected>-- Pilih Mekanik --</option>
+            ${mechanicsOptions}
+          </select>
+          <label style="color: #AAA; font-size: 14px; font-weight: bold;">Catatan Kerusakan:</label>
+          <textarea id="swal-catatan" class="swal2-textarea" placeholder="Contoh: Rem blong, ganti oli, dll..." style="width: 100%; margin: 5px 0; background-color: #2A2A2A; color: #FFF; border: 1px solid #555;"></textarea>
+        </div>
+      `,
       background: '#1E1E1E',
       color: '#FFF',
       showCancelButton: true,
       confirmButtonColor: '#FFC107',
       confirmButtonText: '<span style="color: #000; font-weight: bold;">Tugaskan</span>',
       cancelButtonColor: '#555',
-      customClass: {
-        input: 'swal-dark-select'
-      },
-      willOpen: () => {
-        if (!document.getElementById('swal-dark-select-style')) {
-          const style = document.createElement('style');
-          style.id = 'swal-dark-select-style';
-          style.innerHTML = `
-            .swal-dark-select {
-              color: #000000 !important;
-              background-color: #FFFFFF !important;
-            }
-            .swal-dark-select option {
-              color: #000000 !important;
-              background-color: #FFFFFF !important;
-            }
-          `;
-          document.head.appendChild(style);
+      focusConfirm: false,
+      preConfirm: () => {
+        const id_mekanik = document.getElementById('swal-mekanik').value;
+        const catatan = document.getElementById('swal-catatan').value;
+        
+        if (!id_mekanik) {
+          Swal.showValidationMessage('Silakan pilih mekanik terlebih dahulu');
         }
+        return { id_mekanik: parseInt(id_mekanik, 10), catatan };
       }
-    })
+    });
 
     if (!result.isConfirmed || !result.value) return
 
     try {
+      // Mengirim catatan_kerusakan ke backend (Sesuai model.js yang diperbarui sebelumnya)
       await window.api.assignRepair({
         nomor_polisi,
-        id_mekanik: parseInt(result.value, 10),
-        id_assigned_by: user.id_user
+        id_mekanik: result.value.id_mekanik,
+        id_assigned_by: user.id_user,
+        catatan_kerusakan: result.value.catatan 
       })
       await load()
       Swal.fire({
         title: 'Berhasil',
-        text: 'Mekanik berhasil ditugaskan.',
+        text: 'Tugas dan catatan kerusakan berhasil dikirim ke mekanik.',
         icon: 'success',
         background: '#1E1E1E',
         color: '#FFF'
@@ -207,7 +205,6 @@ export default function Vehicles({ user }) {
     }
   }
 
-  // Gaya tombol utama (Warna Kuning)
   const yellowButtonStyle = {
     backgroundColor: '#FFC107',
     color: '#000000',
@@ -224,7 +221,6 @@ export default function Vehicles({ user }) {
     }
   }
 
-  // Gaya tombol Outline/Border Kuning
   const outlinedButtonStyle = {
     borderColor: '#FFC107',
     color: '#FFC107',
@@ -239,7 +235,7 @@ export default function Vehicles({ user }) {
 
   return (
     <Box sx={{ backgroundColor: '#121212', minHeight: '100vh', color: '#FFFFFF', pt: 4, pb: 6 }}>
-      <Container maxWidth="lg">
+      <Container maxWidth="xl">
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, borderBottom: '2px solid #2A2A2A', pb: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
             Daftar Kendaraan <span style={{ color: '#FFC107' }}>Operasional</span>
@@ -255,7 +251,8 @@ export default function Vehicles({ user }) {
             <Table>
               <TableHead sx={{ backgroundColor: '#2A2A2A' }}>
                 <TableRow>
-                  {['Nomor Polisi', 'Tahun', 'Odometer', 'Status', 'Mekanik', 'Aksi'].map((head) => (
+                  {/* Kolom Catatan ditambahkan di sini */}
+                  {['Nomor Polisi', 'Tahun', 'Odometer', 'Status', 'Catatan', 'Mekanik', 'Aksi'].map((head) => (
                     <TableCell key={head} sx={{ color: '#FFC107', fontWeight: 'bold', borderBottom: '1px solid #333' }}>
                       {head}
                     </TableCell>
@@ -288,6 +285,10 @@ export default function Vehicles({ user }) {
                         }}>
                           {v.status}
                         </span>
+                      </TableCell>
+                      {/* Menampilkan isi catatan kerusakan */}
+                      <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {v.catatan_kerusakan || '-'}
                       </TableCell>
                       <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A' }}>{v.assigned_mechanic || '-'}</TableCell>
                       <TableCell sx={{ display: 'flex', gap: 1, alignItems: 'center', borderBottom: '1px solid #2A2A2A', py: 1.5 }}>
