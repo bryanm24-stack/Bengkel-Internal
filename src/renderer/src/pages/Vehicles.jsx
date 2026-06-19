@@ -9,9 +9,11 @@ import {
   TableHead,
   TableRow,
   TableCell,
-  TableBody
+  TableBody,
+  Paper,
+  TableContainer
 } from '@mui/material'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Swal from 'sweetalert2'
 
 export default function Vehicles({ user }) {
@@ -68,16 +70,32 @@ export default function Vehicles({ user }) {
       title: 'Hapus kendaraan?',
       text: `Kendaraan ${nomor_polisi} akan dihapus. Ini tidak dapat dibatalkan.`,
       icon: 'warning',
+      background: '#1E1E1E',
+      color: '#FFF',
       showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#555',
       confirmButtonText: 'Ya, hapus'
     })
     if (!result.isConfirmed) return
     try {
       await window.api.deleteKendaraan(nomor_polisi)
       await load()
-      Swal.fire('Terhapus', 'Kendaraan berhasil dihapus', 'success')
+      Swal.fire({
+        title: 'Terhapus',
+        text: 'Kendaraan berhasil dihapus',
+        icon: 'success',
+        background: '#1E1E1E',
+        color: '#FFF'
+      })
     } catch (err) {
-      Swal.fire('Gagal', err.message || String(err), 'error')
+      Swal.fire({
+        title: 'Gagal',
+        text: err.message || String(err),
+        icon: 'error',
+        background: '#1E1E1E',
+        color: '#FFF'
+      })
     }
   }
 
@@ -99,8 +117,12 @@ export default function Vehicles({ user }) {
       input: 'select',
       inputOptions: options,
       inputPlaceholder: 'Pilih mekanik',
+      background: '#1E1E1E',
+      color: '#FFF',
       showCancelButton: true,
-      confirmButtonText: 'Tugaskan'
+      confirmButtonColor: '#FFC107',
+      confirmButtonText: '<span style="color: #000; font-weight: bold;">Tugaskan</span>',
+      cancelButtonColor: '#555',
     })
 
     if (!result.isConfirmed || !result.value) return
@@ -112,9 +134,21 @@ export default function Vehicles({ user }) {
         id_assigned_by: user.id_user
       })
       await load()
-      Swal.fire('Berhasil', 'Mekanik berhasil ditugaskan.', 'success')
+      Swal.fire({
+        title: 'Berhasil',
+        text: 'Mekanik berhasil ditugaskan.',
+        icon: 'success',
+        background: '#1E1E1E',
+        color: '#FFF'
+      })
     } catch (err) {
-      Swal.fire('Gagal', err.message || String(err), 'error')
+      Swal.fire({
+        title: 'Gagal',
+        text: err.message || String(err),
+        icon: 'error',
+        background: '#1E1E1E',
+        color: '#FFF'
+      })
     }
   }
 
@@ -124,82 +158,167 @@ export default function Vehicles({ user }) {
       title: `Ubah status menjadi ${targetStatus}?`,
       text: `Kendaraan ${nomor_polisi} akan diubah statusnya menjadi ${targetStatus}.`,
       icon: 'question',
+      background: '#1E1E1E',
+      color: '#FFF',
       showCancelButton: true,
-      confirmButtonText: 'Ya, ubah'
+      confirmButtonColor: '#FFC107',
+      confirmButtonText: '<span style="color: #000; font-weight: bold;">Ya, ubah</span>',
+      cancelButtonColor: '#555',
     })
     if (!result.isConfirmed) return
     try {
       await window.api.updateKendaraanStatus({ nomor_polisi, status: targetStatus })
       await load()
-      Swal.fire('Berhasil', `Status kendaraan diubah menjadi ${targetStatus}`, 'success')
+      Swal.fire({
+        title: 'Berhasil',
+        text: `Status kendaraan diubah menjadi ${targetStatus}`,
+        icon: 'success',
+        background: '#1E1E1E',
+        color: '#FFF'
+      })
     } catch (err) {
-      Swal.fire('Gagal', err.message || String(err), 'error')
+      Swal.fire({
+        title: 'Gagal',
+        text: err.message || String(err),
+        icon: 'error',
+        background: '#1E1E1E',
+        color: '#FFF'
+      })
+    }
+  }
+
+  // Gaya tombol utama (Warna Kuning)
+  const yellowButtonStyle = {
+    backgroundColor: '#FFC107',
+    color: '#000000',
+    fontWeight: 'bold',
+    textTransform: 'none',
+    borderRadius: 1.5,
+    px: 2,
+    '&:hover': {
+      backgroundColor: '#e0a800',
+    },
+    '&.Mui-disabled': {
+      backgroundColor: '#444',
+      color: '#888'
+    }
+  }
+
+  // Gaya tombol Outline/Border Kuning
+  const outlinedButtonStyle = {
+    borderColor: '#FFC107',
+    color: '#FFC107',
+    textTransform: 'none',
+    borderRadius: 1.5,
+    px: 2,
+    '&:hover': {
+      borderColor: '#e0a800',
+      backgroundColor: 'rgba(255, 193, 7, 0.08)',
     }
   }
 
   return (
-    <Container sx={{ py: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5">Daftar Kendaraan Operasional</Typography>
-      </Box>
+    <Box sx={{ backgroundColor: '#121212', minHeight: '100vh', color: '#FFFFFF', pt: 4, pb: 6 }}>
+      <Container maxWidth="lg">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, borderBottom: '2px solid #2A2A2A', pb: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
+            Daftar Kendaraan <span style={{ color: '#FFC107' }}>Operasional</span>
+          </Typography>
+        </Box>
 
-      {loading ? (
-        <CircularProgress />
-      ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Nomor Polisi</TableCell>
-              <TableCell>Tahun</TableCell>
-              <TableCell>Odometer</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Mekanik</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {vehicles.map((v) => {
-              const assignedToMe = v.assigned_mechanic_id === user?.id_user || Boolean(assignedVehicleIds[v.nomor_polisi])
-              return (
-                <TableRow key={v.nomor_polisi} sx={v.status === 'Diperbaiki' ? { backgroundColor: '#fff5cc' } : {}}>
-                  <TableCell>{v.nomor_polisi}</TableCell>
-                  <TableCell>{v.tahun}</TableCell>
-                  <TableCell>{v.odometer}</TableCell>
-                  <TableCell>{v.status}</TableCell>
-                  <TableCell>{v.assigned_mechanic || '-'}</TableCell>
-                  <TableCell sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    {user?.role !== 'Kepala_Mekanik' ? (
-                      <Button
-                        size="small"
-                        onClick={() => navigate(`/repairs/${encodeURIComponent(v.nomor_polisi)}`)}
-                        disabled={!assignedToMe}
-                      >
-                        Perbaiki
-                      </Button>
-                    ) : (
-                      <>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleToggleStatus(v.nomor_polisi, v.status)}
-                        >
-                          {v.status === 'Aktif' ? 'Set Diperbaiki' : 'Set Aktif'}
-                        </Button>
-                        <Button size="small" onClick={() => handleAssign(v.nomor_polisi)}>
-                          {v.assigned_mechanic ? 'Tugaskan Ulang' : 'Tugaskan'}
-                        </Button>
-                        <Button color="error" size="small" onClick={() => handleDelete(v.nomor_polisi)}>
-                          Hapus
-                        </Button>
-                      </>
-                    )}
-                  </TableCell>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+            <CircularProgress sx={{ color: '#FFC107' }} />
+          </Box>
+        ) : (
+          <TableContainer component={Paper} sx={{ backgroundColor: '#1E1E1E', borderRadius: 3, boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.3)', overflow: 'hidden' }}>
+            <Table>
+              <TableHead sx={{ backgroundColor: '#2A2A2A' }}>
+                <TableRow>
+                  {['Nomor Polisi', 'Tahun', 'Odometer', 'Status', 'Mekanik', 'Aksi'].map((head) => (
+                    <TableCell key={head} sx={{ color: '#FFC107', fontWeight: 'bold', borderBottom: '1px solid #333' }}>
+                      {head}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      )}
-    </Container>
+              </TableHead>
+              <TableBody>
+                {vehicles.map((v) => {
+                  const assignedToMe = v.assigned_mechanic_id === user?.id_user || Boolean(assignedVehicleIds[v.nomor_polisi])
+                  const isDiperbaiki = v.status === 'Diperbaiki'
+
+                  return (
+                    <TableRow 
+                      key={v.nomor_polisi} 
+                      sx={{ 
+                        backgroundColor: isDiperbaiki ? '#2d2715' : 'transparent',
+                        '&:hover': { backgroundColor: isDiperbaiki ? '#3a321a' : '#252525' }
+                      }}
+                    >
+                      <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A', fontWeight: 600 }}>{v.nomor_polisi}</TableCell>
+                      <TableCell sx={{ color: '#AAA', borderBottom: '1px solid #2A2A2A' }}>{v.tahun}</TableCell>
+                      <TableCell sx={{ color: '#AAA', borderBottom: '1px solid #2A2A2A' }}>{v.odometer} Km</TableCell>
+                      <TableCell sx={{ borderBottom: '1px solid #2A2A2A' }}>
+                        <span style={{ 
+                          color: isDiperbaiki ? '#FFC107' : '#4CAF50', 
+                          fontWeight: 'bold',
+                          backgroundColor: isDiperbaiki ? 'rgba(255, 193, 7, 0.1)' : 'rgba(76, 175, 80, 0.1)',
+                          padding: '4px 8px',
+                          borderRadius: '4px'
+                        }}>
+                          {v.status}
+                        </span>
+                      </TableCell>
+                      <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A' }}>{v.assigned_mechanic || '-'}</TableCell>
+                      <TableCell sx={{ display: 'flex', gap: 1, alignItems: 'center', borderBottom: '1px solid #2A2A2A', py: 1.5 }}>
+                        {user?.role !== 'Kepala_Mekanik' ? (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            onClick={() => navigate(`/repairs/${encodeURIComponent(v.nomor_polisi)}`)}
+                            disabled={!assignedToMe}
+                            sx={yellowButtonStyle}
+                          >
+                            Perbaiki
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => handleToggleStatus(v.nomor_polisi, v.status)}
+                              sx={outlinedButtonStyle}
+                            >
+                              {v.status === 'Aktif' ? 'Set Diperbaiki' : 'Set Aktif'}
+                            </Button>
+                            <Button 
+                              size="small" 
+                              variant="contained"
+                              onClick={() => handleAssign(v.nomor_polisi)}
+                              sx={yellowButtonStyle}
+                            >
+                              {v.assigned_mechanic ? 'Tugaskan Ulang' : 'Tugaskan'}
+                            </Button>
+                            <Button 
+                              color="error" 
+                              size="small" 
+                              variant="text"
+                              onClick={() => handleDelete(v.nomor_polisi)}
+                              sx={{ textTransform: 'none', fontWeight: 'bold', '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.08)' } }}
+                            >
+                              Hapus
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Container>
+    </Box>
   )
 }
