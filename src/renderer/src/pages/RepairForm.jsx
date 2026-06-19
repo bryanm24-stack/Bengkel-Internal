@@ -7,6 +7,7 @@ import {
   MenuItem,
   Button,
   Table,
+  TableHead,
   TableRow,
   TableCell,
   TableBody,
@@ -25,7 +26,10 @@ export default function RepairForm({ user }) {
   const formReady = Boolean(preSelectedPol)
   const [kategoriList, setKategoriList] = useState([])
   const [selectedKategori, setSelectedKategori] = useState('')
-  const [sukuList, setSukuList] = useState([])
+  
+  // MENGUBAH ARRAY MENJADI OBJEK MAP AGAR DATA KATEGORI SEBELUMNYA TIDAK TERTUTUP/HILANG
+  const [sukuList, setSukuList] = useState({}) 
+  
   const [rows, setRows] = useState([])
   const [odometerBaru, setOdometerBaru] = useState('')
   const [assignedTask, setAssignedTask] = useState(null)
@@ -35,7 +39,6 @@ export default function RepairForm({ user }) {
   useEffect(() => {
     loadCategories()
   }, [])
-  
   useEffect(() => {
     if (selectedKategori) {
       loadSuku(selectedKategori)
@@ -58,7 +61,17 @@ export default function RepairForm({ user }) {
     setLoading(true)
     try {
       const items = await window.api.getSukuByKategori(kat)
-      setSukuList(items || [])
+      
+      // MENGGABUNGKAN DATA BARU TANPA MENGHAPUS DATA LAMA
+      setSukuList(prev => {
+        const updated = { ...prev }
+        if (items && items.length > 0) {
+          items.forEach(item => {
+            updated[item.id_suku_cadang] = item
+          })
+        }
+        return updated
+      })
     } finally {
       setLoading(false)
     }
@@ -94,7 +107,6 @@ export default function RepairForm({ user }) {
   }
 
   const removeRow = async (idx) => {
-    // Kustomisasi SweetAlert2 dengan gaya Dark Mode
     const result = await Swal.fire({
       title: 'Hapus item?',
       text: 'Anda akan menghapus komponen ini dari transaksi.',
@@ -102,10 +114,29 @@ export default function RepairForm({ user }) {
       background: '#1E1E1E',
       color: '#FFF',
       showCancelButton: true,
-      confirmButtonColor: '#FF5252',
-      cancelButtonColor: '#333',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#555',
       confirmButtonText: 'Ya, hapus',
-      cancelButtonText: 'Batal'
+      customClass: {
+        input: 'swal-dark-select'
+      },
+      willOpen: () => {
+        if (!document.getElementById('swal-dark-select-style')) {
+          const style = document.createElement('style');
+          style.id = 'swal-dark-select-style';
+          style.innerHTML = `
+            .swal-dark-select {
+              color: #000000 !important;
+              background-color: #FFFFFF !important;
+            }
+            .swal-dark-select option {
+              color: #000000 !important;
+              background-color: #FFFFFF !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+      }
     })
     if (result.isConfirmed) {
       const copy = rows.filter((_, i) => i !== idx)
@@ -142,7 +173,6 @@ export default function RepairForm({ user }) {
     }
   }
 
-  // Objek styling kustom Input Dark Mode
   const darkTextFieldStyle = {
     '& .MuiInputLabel-root': { color: '#888' },
     '& .MuiInputLabel-root.Mui-focused': { color: '#FFC107' },
@@ -157,7 +187,6 @@ export default function RepairForm({ user }) {
     '& .MuiSelect-icon': { color: '#FFC107' }
   }
 
-  // Objek styling dropdown menu item list
   const menuPropsStyle = {
     PaperProps: {
       sx: {
@@ -173,52 +202,48 @@ export default function RepairForm({ user }) {
     <Box sx={{ backgroundColor: '#121212', minHeight: '100vh', color: '#FFFFFF', pt: 4, pb: 6 }}>
       <Container maxWidth="md">
         
-        {/* Header Title */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, borderBottom: '2px solid #2A2A2A', pb: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-            Penyelesaian <span style={{ color: '#FFC107' }}>Perbaikan</span> {preSelectedPol && `(${preSelectedPol})`}
+            Form Penyelesaian Perbaikan <span style={{ color: '#FFC107' }}>{preSelectedPol ? `(${preSelectedPol})` : ''}</span>
           </Typography>
         </Box>
 
         {!formReady && (
           <Alert severity="info" sx={{ mb: 3, backgroundColor: '#0288d1', color: '#FFF', fontWeight: 'bold' }}>
-            Silakan pilih kendaraan dari halaman 'Kendaraan' terlebih dahulu, lalu klik tombol 'Perbaiki'.
+            Silakan pilih kendaraan dari halaman Kendaraan lalu klik tombol Perbaiki untuk membuka form yang benar.
           </Alert>
         )}
 
-        {/* Form Area Wrapper */}
-        <Paper sx={{ backgroundColor: '#1E1E1E', p: 4, borderRadius: 3, boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)', mb: 4 }}>
+        <Paper sx={{ backgroundColor: '#1E1E1E', p: 4, borderRadius: 3, boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)' }}>
           
-          <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+          <Box sx={{ my: 2 }}>
             <TextField
-              label="Odometer Baru (Km)"
+              label="Odometer Baru"
               value={odometerBaru}
               onChange={(e) => setOdometerBaru(e.target.value)}
               type="number"
               disabled={!formReady}
-              sx={{ flex: 1, minWidth: '200px', ...darkTextFieldStyle }}
+              sx={{ minWidth: 240, ...darkTextFieldStyle }}
             />
-            
+          </Box>
+
+          <Box sx={{ my: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <TextField
               select
-              label="Saring Suku Cadang Berdasarkan Kategori"
+              label="Kategori"
               value={selectedKategori}
               onChange={(e) => setSelectedKategori(e.target.value)}
               disabled={!formReady}
-              sx={{ flex: 1, minWidth: '200px', ...darkTextFieldStyle }}
+              sx={{ minWidth: 240, ...darkTextFieldStyle }}
               SelectProps={menuPropsStyle}
             >
               {kategoriList.map((k) => (
-                <MenuItem key={k} value={k}>{k}</MenuItem>
+                <MenuItem key={k} value={k}>
+                  {k}
+                </MenuItem>
               ))}
             </TextField>
-          </Box>
-
-          {/* Dinamis Suku Cadang Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ color: '#FFC107', fontWeight: 'bold', textTransform: 'uppercase' }}>
-              Komponen yang Digunakan
-            </Typography>
+            
             <Button 
               variant="outlined" 
               onClick={addRow} 
@@ -228,54 +253,67 @@ export default function RepairForm({ user }) {
                 color: '#FFC107',
                 textTransform: 'none',
                 fontWeight: 'bold',
+                py: 1.2,
+                px: 3,
                 borderRadius: 2,
-                '&:hover': { borderColor: '#e0a800', backgroundColor: 'rgba(255,193,7,0.1)' }
+                '&:hover': { borderColor: '#e0a800', backgroundColor: 'rgba(255,193,7,0.1)' },
+                '&:disabled': { borderColor: '#444', color: '#666' }
               }}
             >
-              + Tambah Komponen
+              Tambah Komponen
             </Button>
           </Box>
 
-          {/* Dynamic Rows Table */}
-          <TableContainer component={Box} sx={{ backgroundColor: '#252525', borderRadius: 2, mb: 3 }}>
-            <Table size="small">
+          <TableContainer component={Box} sx={{ backgroundColor: '#252525', borderRadius: 2, mb: 3, overflow: 'hidden' }}>
+            <Table>
+              <TableHead sx={{ backgroundColor: '#2A2A2A' }}>
+                <TableRow>
+                  <TableCell sx={{ color: '#FFC107', fontWeight: 'bold', borderBottom: '1px solid #333' }}>Komponen</TableCell>
+                  <TableCell sx={{ color: '#FFC107', fontWeight: 'bold', borderBottom: '1px solid #333', width: '150px' }}>Kuantitas</TableCell>
+                  <TableCell sx={{ color: '#FFC107', fontWeight: 'bold', borderBottom: '1px solid #333', width: '100px' }} align="center">Action</TableCell>
+                </TableRow>
+              </TableHead>
               <TableBody>
                 {rows.length > 0 ? (
                   rows.map((r, i) => (
                     <TableRow key={i} sx={{ '&:hover': { backgroundColor: '#2E2E2E' } }}>
-                      
-                      {/* Dropdown Suku Cadang */}
-                      <TableCell sx={{ borderBottom: '1px solid #333', py: 1.5 }}>
+                      <TableCell sx={{ borderBottom: '1px solid #333', py: 2 }}>
                         <TextField
                           select
-                          label="Pilih Komponen"
                           value={r.id_suku_cadang}
                           onChange={(e) => updateRow(i, 'id_suku_cadang', e.target.value)}
                           fullWidth
                           sx={darkTextFieldStyle}
                           SelectProps={menuPropsStyle}
                         >
-                          {sukuList.map((s) => (
-                            <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
-                              {s.nama} (Stok: {s.kuantitas_fisik})
+                          {/* JIKA ID SUDAH DIPILIH, TAMPILKAN MENU ITEM DARI DATA YANG TERSIMPAN DI STATE MAP */}
+                          {r.id_suku_cadang && sukuList[r.id_suku_cadang] && (
+                            <MenuItem key={r.id_suku_cadang} value={r.id_suku_cadang}>
+                              {sukuList[r.id_suku_cadang].nama} (stok: {sukuList[r.id_suku_cadang].kuantitas_fisik})
                             </MenuItem>
-                          ))}
+                          )}
+                          {/* TAMPILKAN JUGA OPSIONAL LAINNYA YANG ADA PADA STATE SEKARANG JIKA ID-NYA BERBEDA */}
+                          {Object.values(sukuList).map((s) => {
+                            if (s.id_suku_cadang === r.id_suku_cadang) return null;
+                            return (
+                              <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
+                                {s.nama} (stok: {s.kuantitas_fisik})
+                              </MenuItem>
+                            )
+                          })}
                         </TextField>
                       </TableCell>
-
-                      {/* Input Jumlah Kuantitas */}
-                      <TableCell sx={{ borderBottom: '1px solid #333', width: '130px' }}>
+                      <TableCell sx={{ borderBottom: '1px solid #333' }}>
                         <TextField
-                          label="Jumlah"
                           type="number"
                           value={r.kuantitas_dipakai}
-                          onChange={(e) => updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))}
+                          onChange={(e) =>
+                            updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))
+                          }
                           sx={darkTextFieldStyle}
                         />
                       </TableCell>
-
-                      {/* Tombol Aksi Delete */}
-                      <TableCell sx={{ borderBottom: '1px solid #333', width: '90px' }} align="center">
+                      <TableCell sx={{ borderBottom: '1px solid #333' }} align="center">
                         <Button 
                           color="error" 
                           onClick={() => removeRow(i)}
@@ -284,13 +322,12 @@ export default function RepairForm({ user }) {
                           Hapus
                         </Button>
                       </TableCell>
-
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell align="center" sx={{ color: '#777', py: 4, border: 'none' }}>
-                      Belum ada komponen tambahan yang dipilih.
+                    <TableCell align="center" colSpan={3} sx={{ color: '#777', py: 4, border: 'none' }}>
+                      Belum ada suku cadang yang dimasukkan.
                     </TableCell>
                   </TableRow>
                 )}
@@ -298,14 +335,13 @@ export default function RepairForm({ user }) {
             </Table>
           </TableContainer>
 
-          {user?.role !== 'Kepala_Mekanik' && !assignedTask && formReady && (
+          {user?.role !== 'Kepala_Mekanik' && !assignedTask && formReady ? (
             <Alert severity="warning" sx={{ mb: 3, backgroundColor: '#e65100', color: '#FFF' }}>
-              Anda belum ditugaskan untuk menangani kendaraan ini. Tombol simpan dinonaktifkan otomatis.
+              Anda belum ditugaskan untuk kendaraan ini, sehingga tidak dapat menyelesaikan perbaikan.
             </Alert>
-          )}
+          ) : null}
 
-          {/* Form Action Submit */}
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
             <Button
               variant="contained"
               onClick={submit}
@@ -323,26 +359,24 @@ export default function RepairForm({ user }) {
                 '&:disabled': { backgroundColor: '#444', color: '#888' }
               }}
             >
-              {loading ? <CircularProgress size={22} sx={{ color: '#000' }} /> : 'Simpan Penyelesaian'}
+              {loading ? <CircularProgress size={20} sx={{ color: '#000' }} /> : 'Simpan Penyelesaian'}
             </Button>
           </Box>
         </Paper>
 
-        {/* Toast Notification */}
         <Snackbar
           open={toast.open}
           autoHideDuration={6000}
           onClose={() => setToast({ ...toast, open: false })}
         >
           <Alert 
-            severity={toast.severity} 
+            severity={toast.severity}
             onClose={() => setToast({ ...toast, open: false })}
             sx={{ backgroundColor: toast.severity === 'success' ? '#1B5E20' : '#4A0000', color: '#FFF' }}
           >
             {toast.message}
           </Alert>
         </Snackbar>
-
       </Container>
     </Box>
   )

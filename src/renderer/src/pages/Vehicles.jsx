@@ -123,6 +123,26 @@ export default function Vehicles({ user }) {
       confirmButtonColor: '#FFC107',
       confirmButtonText: '<span style="color: #000; font-weight: bold;">Tugaskan</span>',
       cancelButtonColor: '#555',
+      customClass: {
+        input: 'swal-dark-select'
+      },
+      willOpen: () => {
+        if (!document.getElementById('swal-dark-select-style')) {
+          const style = document.createElement('style');
+          style.id = 'swal-dark-select-style';
+          style.innerHTML = `
+            .swal-dark-select {
+              color: #000000 !important;
+              background-color: #FFFFFF !important;
+            }
+            .swal-dark-select option {
+              color: #000000 !important;
+              background-color: #FFFFFF !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+      }
     })
 
     if (!result.isConfirmed || !result.value) return
