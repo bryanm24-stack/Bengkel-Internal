@@ -35,10 +35,7 @@ export default function RepairForm({ user }) {
     loadCategories()
   }, [])
   useEffect(() => {
-    if (selectedKategori) {
-      loadSuku(selectedKategori)
-    }
-    setRows([])
+    if (selectedKategori) loadSuku(selectedKategori)
   }, [selectedKategori])
 
   useEffect(() => {
@@ -73,21 +70,13 @@ export default function RepairForm({ user }) {
   }
 
   const addRow = () => {
-    if (!formReady || !selectedKategori) return
+    if (!formReady) return
     setRows([...rows, { id_suku_cadang: '', kuantitas_dipakai: 1 }])
   }
 
   const updateRow = (idx, field, value) => {
     const copy = [...rows]
-    const row = { ...copy[idx] }
-    if (field === 'id_suku_cadang') {
-      row[field] = value === '' ? '' : Number(value)
-    } else if (field === 'kuantitas_dipakai') {
-      row[field] = Number(value) || 0
-    } else {
-      row[field] = value
-    }
-    copy[idx] = row
+    copy[idx][field] = value
     setRows(copy)
   }
 
@@ -189,12 +178,9 @@ export default function RepairForm({ user }) {
                 <TableCell>
                   <TextField
                     select
-                    value={r.id_suku_cadang || ''}
+                    value={r.id_suku_cadang}
                     onChange={(e) => updateRow(i, 'id_suku_cadang', e.target.value)}
                   >
-                    <MenuItem value="" disabled>
-                      Pilih Komponen
-                    </MenuItem>
                     {sukuList.map((s) => (
                       <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
                         {s.nama} (stok: {s.kuantitas_fisik})
