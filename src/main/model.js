@@ -150,8 +150,8 @@ export const getSukuByKategori = async (event, kategori) => {
 export const getReports = async () => {
   const reports = {}
   const [resultSets] = await pool.query('CALL SP_GetReports()')
-  // resultSets will be an array of result sets; map accordingly
   reports.kesiapan_armada = resultSets[0] || []
+  reports.kesiapan_kendaraan = reports.kesiapan_armada
   reports.defisit_inventaris = resultSets[1] || []
   reports.frekuensi_kerusakan = resultSets[2] || []
   reports.distribusi_penugasan = resultSets[3] || []
