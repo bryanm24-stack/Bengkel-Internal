@@ -37,7 +37,10 @@ export default function RepairForm({ user }) {
   }, [])
   
   useEffect(() => {
-    if (selectedKategori) loadSuku(selectedKategori)
+    if (selectedKategori) {
+      loadSuku(selectedKategori)
+    }
+    setRows([])
   }, [selectedKategori])
 
   useEffect(() => {
@@ -72,13 +75,21 @@ export default function RepairForm({ user }) {
   }
 
   const addRow = () => {
-    if (!formReady) return
+    if (!formReady || !selectedKategori) return
     setRows([...rows, { id_suku_cadang: '', kuantitas_dipakai: 1 }])
   }
 
   const updateRow = (idx, field, value) => {
     const copy = [...rows]
-    copy[idx][field] = value
+    const row = { ...copy[idx] }
+    if (field === 'id_suku_cadang') {
+      row[field] = value === '' ? '' : Number(value)
+    } else if (field === 'kuantitas_dipakai') {
+      row[field] = Number(value) || 0
+    } else {
+      row[field] = value
+    }
+    copy[idx] = row
     setRows(copy)
   }
 
