@@ -27,9 +27,12 @@ export default function RepairForm({ user }) {
   const [kategoriList, setKategoriList] = useState([])
   const [selectedKategori, setSelectedKategori] = useState('')
   
-  // MENGUBAH ARRAY MENJADI OBJEK MAP AGAR DATA KATEGORI SEBELUMNYA TIDAK TERTUTUP/HILANG
-  const [sukuList, setSukuList] = useState({}) 
+  // HANYA MENYIMPAN DAFTAR KATEGORI YANG AKTIF SAAT INI (BERBENTUK ARRAY)
+  const [sukuList, setSukuList] = useState([]) 
   
+  // UNTUK MENYIMPAN MEMORI NAMA SUKU CADANG YANG SUDAH TERPILIH DI BARIS SEBELUMNYA AGAR TIDAK HILANG
+  const [savedSukuCadang, setSavedSukuCadang] = useState({})
+
   const [rows, setRows] = useState([])
   const [odometerBaru, setOdometerBaru] = useState('')
   const [assignedTask, setAssignedTask] = useState(null)
@@ -39,6 +42,7 @@ export default function RepairForm({ user }) {
   useEffect(() => {
     loadCategories()
   }, [])
+
   useEffect(() => {
     if (selectedKategori) loadSuku(selectedKategori)
   }, [selectedKategori])
@@ -58,17 +62,8 @@ export default function RepairForm({ user }) {
     setLoading(true)
     try {
       const items = await window.api.getSukuByKategori(kat)
-      
-      // MENGGABUNGKAN DATA BARU TANPA MENGHAPUS DATA LAMA
-      setSukuList(prev => {
-        const updated = { ...prev }
-        if (items && items.length > 0) {
-          items.forEach(item => {
-            updated[item.id_suku_cadang] = item
-          })
-        }
-        return updated
-      })
+      // Selalu ganti dengan item kategori baru agar tidak bercampur/bergabung
+      setSukuList(items || [])
     } finally {
       setLoading(false)
     }
@@ -93,6 +88,17 @@ export default function RepairForm({ user }) {
     const copy = [...rows]
     copy[idx][field] = value
     setRows(copy)
+
+    // Jika user memilih suku cadang, simpan infonya ke memori map 'savedSukuCadang'
+    if (field === 'id_suku_cadang' && value) {
+      const targetItem = sukuList.find(item => item.id_suku_cadang === value)
+      if (targetItem) {
+        setSavedSukuCadang(prev => ({
+          ...prev,
+          [value]: targetItem
+        }))
+      }
+    }
   }
 
   const removeRow = async (idx) => {
@@ -114,14 +120,8 @@ export default function RepairForm({ user }) {
           const style = document.createElement('style');
           style.id = 'swal-dark-select-style';
           style.innerHTML = `
-            .swal-dark-select {
-              color: #000000 !important;
-              background-color: #FFFFFF !important;
-            }
-            .swal-dark-select option {
-              color: #000000 !important;
-              background-color: #FFFFFF !important;
-            }
+            .swal-dark-select { color: #000000 !important; background-color: #FFFFFF !important; }
+            .swal-dark-select option { color: #000000 !important; background-color: #FFFFFF !important; }
           `;
           document.head.appendChild(style);
         }
@@ -238,13 +238,7 @@ export default function RepairForm({ user }) {
               onClick={addRow} 
               disabled={!formReady || (user?.role !== 'Kepala_Mekanik' && !assignedTask)}
               sx={{
-                borderColor: '#FFC107',
-                color: '#FFC107',
-                textTransform: 'none',
-                fontWeight: 'bold',
-                py: 1.2,
-                px: 3,
-                borderRadius: 2,
+                borderColor: '#FFC107', color: '#FFC107', textTransform: 'none', fontWeight: 'bold', py: 1.2, px: 3, borderRadius: 2,
                 '&:hover': { borderColor: '#e0a800', backgroundColor: 'rgba(255,193,7,0.1)' },
                 '&:disabled': { borderColor: '#444', color: '#666' }
               }}
@@ -275,39 +269,31 @@ export default function RepairForm({ user }) {
                           sx={darkTextFieldStyle}
                           SelectProps={menuPropsStyle}
                         >
-                          {/* JIKA ID SUDAH DIPILIH, TAMPILKAN MENU ITEM DARI DATA YANG TERSIMPAN DI STATE MAP */}
-                          {r.id_suku_cadang && sukuList[r.id_suku_cadang] && (
+                          {/* JIKA KOMPONEN INI SUDAH TERPILIH SEBELUMNYA DAN SEKARANG BEDA KATEGORI, AMBIL DARI MEMORI AGAR TEXT TIDAK HILANG */}
+                          {r.id_suku_cadang && !sukuList.some(s => s.id_suku_cadang === r.id_suku_cadang) && savedSukuCadang[r.id_suku_cadang] && (
                             <MenuItem key={r.id_suku_cadang} value={r.id_suku_cadang}>
-                              {sukuList[r.id_suku_cadang].nama} (stok: {sukuList[r.id_suku_cadang].kuantitas_fisik})
+                              {savedSukuCadang[r.id_suku_cadang].nama} (stok: {savedSukuCadang[r.id_suku_cadang].kuantitas_fisik})
                             </MenuItem>
                           )}
-                          {/* TAMPILKAN JUGA OPSIONAL LAINNYA YANG ADA PADA STATE SEKARANG JIKA ID-NYA BERBEDA */}
-                          {Object.values(sukuList).map((s) => {
-                            if (s.id_suku_cadang === r.id_suku_cadang) return null;
-                            return (
-                              <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
-                                {s.nama} (stok: {s.kuantitas_fisik})
-                              </MenuItem>
-                            )
-                          })}
+
+                          {/* HANYA MENAMPILKAN KOMPONEN BERDASARKAN KATEGORI YANG AKTIF SAAT INI */}
+                          {sukuList.map((s) => (
+                            <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
+                              {s.nama} (stok: {s.kuantitas_fisik})
+                            </MenuItem>
+                          ))}
                         </TextField>
                       </TableCell>
                       <TableCell sx={{ borderBottom: '1px solid #333' }}>
                         <TextField
                           type="number"
                           value={r.kuantitas_dipakai}
-                          onChange={(e) =>
-                            updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))
-                          }
+                          onChange={(e) => updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))}
                           sx={darkTextFieldStyle}
                         />
                       </TableCell>
                       <TableCell sx={{ borderBottom: '1px solid #333' }} align="center">
-                        <Button 
-                          color="error" 
-                          onClick={() => removeRow(i)}
-                          sx={{ textTransform: 'none', fontWeight: 'bold' }}
-                        >
+                        <Button color="error" onClick={() => removeRow(i)} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
                           Hapus
                         </Button>
                       </TableCell>
@@ -323,50 +309,6 @@ export default function RepairForm({ user }) {
               </TableBody>
             </Table>
           </TableContainer>
-      <Box>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Komponen</TableCell>
-              <TableCell>Kuantitas</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((r, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <TextField
-                    select
-                    value={r.id_suku_cadang}
-                    onChange={(e) => updateRow(i, 'id_suku_cadang', e.target.value)}
-                  >
-                    {sukuList.map((s) => (
-                      <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
-                        {s.nama} (stok: {s.kuantitas_fisik})
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    type="number"
-                    value={r.kuantitas_dipakai}
-                    onChange={(e) =>
-                      updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => removeRow(i)}>
-                    Hapus
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
 
           {user?.role !== 'Kepala_Mekanik' && !assignedTask && formReady ? (
             <Alert severity="warning" sx={{ mb: 3, backgroundColor: '#e65100', color: '#FFF' }}>
@@ -380,13 +322,7 @@ export default function RepairForm({ user }) {
               onClick={submit}
               disabled={!formReady || loading || (user?.role !== 'Kepala_Mekanik' && !assignedTask)}
               sx={{
-                px: 4,
-                py: 1.2,
-                backgroundColor: '#FFC107',
-                color: '#000',
-                fontWeight: 'bold',
-                textTransform: 'none',
-                borderRadius: 2,
+                px: 4, py: 1.2, backgroundColor: '#FFC107', color: '#000', fontWeight: 'bold', textTransform: 'none', borderRadius: 2,
                 boxShadow: '0px 4px 15px rgba(255, 193, 7, 0.3)',
                 '&:hover': { backgroundColor: '#e0a800' },
                 '&:disabled': { backgroundColor: '#444', color: '#888' }
@@ -397,16 +333,8 @@ export default function RepairForm({ user }) {
           </Box>
         </Paper>
 
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={6000}
-          onClose={() => setToast({ ...toast, open: false })}
-        >
-          <Alert 
-            severity={toast.severity}
-            onClose={() => setToast({ ...toast, open: false })}
-            sx={{ backgroundColor: toast.severity === 'success' ? '#1B5E20' : '#4A0000', color: '#FFF' }}
-          >
+        <Snackbar open={toast.open} autoHideDuration={6000} onClose={() => setToast({ ...toast, open: false })}>
+          <Alert severity={toast.severity} onClose={() => setToast({ ...toast, open: false })} sx={{ backgroundColor: toast.severity === 'success' ? '#1B5E20' : '#4A0000', color: '#FFF' }}>
             {toast.message}
           </Alert>
         </Snackbar>
