@@ -97,9 +97,9 @@ export const getAssignedRepairByVehicle = async (event, payload) => {
 }
 
 export const assignRepair = async (event, payload) => {
-  const { nomor_polisi, id_mekanik, id_assigned_by } = payload
+  const { nomor_polisi, id_mekanik, id_assigned_by, catatan_kerusakan } = payload 
   try {
-    await pool.query('CALL SP_AssignRepairToMekanik(?,?,?)', [nomor_polisi, id_mekanik, id_assigned_by])
+    await pool.query('CALL SP_AssignRepairToMekanik(?,?,?,?)', [nomor_polisi, id_mekanik, id_assigned_by, catatan_kerusakan])
     return { success: true }
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'DB assign error')
@@ -172,3 +172,4 @@ export const login = async (event, username, password) => {
     throw new Error(err.sqlMessage || err.message || 'Login error')
   }
 }
+
