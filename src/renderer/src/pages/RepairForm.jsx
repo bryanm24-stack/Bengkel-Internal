@@ -18,10 +18,11 @@ import {
   TableContainer
 } from '@mui/material'
 import Swal from 'sweetalert2'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 
 export default function RepairForm({ user }) {
   const params = useParams()
+  const location = useLocation()
   const preSelectedPol = params.nomor_polisi ? decodeURIComponent(params.nomor_polisi) : null
   const formReady = Boolean(preSelectedPol)
   const [kategoriList, setKategoriList] = useState([])
@@ -35,6 +36,9 @@ export default function RepairForm({ user }) {
   const [assignedTask, setAssignedTask] = useState(null)
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' })
+
+  // Ambil catatan kerusakan dari route state (jika diklik dari halaman kendaraan)
+  const catatanDariState = location.state?.catatan_kerusakan
 
   useEffect(() => {
     loadCategories()
@@ -212,6 +216,27 @@ export default function RepairForm({ user }) {
           <Alert severity="info" sx={{ mb: 3, backgroundColor: '#0288d1', color: '#FFF', fontWeight: 'bold' }}>
             Silakan pilih kendaraan dari halaman Kendaraan lalu klik tombol Perbaiki untuk membuka form yang benar.
           </Alert>
+        )}
+
+        {/* MENAMPILKAN KOTAK INFORMASI CATATAN KERUSAKAN JIKA ADA DATA */}
+        {formReady && (catatanDariState || assignedTask?.catatan_kerusakan) && (
+          <Paper 
+            sx={{ 
+              backgroundColor: '#1E1E1E', 
+              p: 3, 
+              borderRadius: 3, 
+              mb: 3, 
+              boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)',
+              borderLeft: '5px solid #FFC107'
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ color: '#FFC107', fontWeight: 'bold', mb: 1 }}>
+              Catatan Kerusakan / Keluhan:
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#FFF', lineHeight: 1.5 }}>
+              {catatanDariState || assignedTask?.catatan_kerusakan}
+            </Typography>
+          </Paper>
         )}
 
         <Paper sx={{ backgroundColor: '#1E1E1E', p: 4, borderRadius: 3, boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)' }}>

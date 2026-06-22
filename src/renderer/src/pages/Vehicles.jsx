@@ -251,8 +251,8 @@ export default function Vehicles({ user }) {
             <Table>
               <TableHead sx={{ backgroundColor: '#2A2A2A' }}>
                 <TableRow>
-                  {/* Kolom Catatan ditambahkan di sini */}
-                  {['Nomor Polisi', 'Tahun', 'Odometer', 'Status', 'Catatan', 'Mekanik', 'Aksi'].map((head) => (
+                  {/* Kolom Catatan disembunyikan jika role bukan Kepala_Mekanik */}
+                  {['Nomor Polisi', 'Tahun', 'Odometer', 'Status', ...(user?.role === 'Kepala_Mekanik' ? ['Catatan'] : []), 'Mekanik', 'Aksi'].map((head) => (
                     <TableCell key={head} sx={{ color: '#FFC107', fontWeight: 'bold', borderBottom: '1px solid #333' }}>
                       {head}
                     </TableCell>
@@ -286,17 +286,20 @@ export default function Vehicles({ user }) {
                           {v.status}
                         </span>
                       </TableCell>
-                      {/* Menampilkan isi catatan kerusakan */}
-                      <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {v.catatan_kerusakan || '-'}
-                      </TableCell>
+                      {/* Tampilkan isi catatan kerusakan hanya jika role Kepala_Mekanik */}
+                      {user?.role === 'Kepala_Mekanik' && (
+                        <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {v.catatan_kerusakan || '-'}
+                        </TableCell>
+                      )}
                       <TableCell sx={{ color: '#FFF', borderBottom: '1px solid #2A2A2A' }}>{v.assigned_mechanic || '-'}</TableCell>
                       <TableCell sx={{ display: 'flex', gap: 1, alignItems: 'center', borderBottom: '1px solid #2A2A2A', py: 1.5 }}>
                         {user?.role !== 'Kepala_Mekanik' ? (
                           <Button
                             size="small"
                             variant="contained"
-                            onClick={() => navigate(`/repairs/${encodeURIComponent(v.nomor_polisi)}`)}
+                            /* Mengirimkan data catatan_kerusakan melalui router state */
+                            onClick={() => navigate(`/repairs/${encodeURIComponent(v.nomor_polisi)}`, { state: { catatan_kerusakan: v.catatan_kerusakan } })}
                             disabled={!assignedToMe}
                             sx={yellowButtonStyle}
                           >
