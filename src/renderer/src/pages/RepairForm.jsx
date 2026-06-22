@@ -28,8 +28,11 @@ export default function RepairForm({ user }) {
   const [kategoriList, setKategoriList] = useState([])
   const [selectedKategori, setSelectedKategori] = useState('')
   
-  // MENGUBAH ARRAY MENJADI OBJEK MAP AGAR DATA KATEGORI SEBELUMNYA TIDAK TERTUTUP/HILANG
+  // STRUKTUR MAP: { nama_kategori: [ list_suku_cadang ] }
   const [sukuList, setSukuList] = useState({}) 
+  
+  // FLAT CACHE: Mengamankan nama & teks komponen lama agar tidak blank saat kategori di atas diubah
+  const [allSukuCache, setAllSukuCache] = useState({})
   
   const [rows, setRows] = useState([])
   const [odometerBaru, setOdometerBaru] = useState('')
@@ -37,17 +40,16 @@ export default function RepairForm({ user }) {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' })
 
-  // Ambil catatan kerusakan dari route state (jika diklik dari halaman kendaraan)
   const catatanDariState = location.state?.catatan_kerusakan
 
   useEffect(() => {
     loadCategories()
   }, [])
+
   useEffect(() => {
     if (selectedKategori) {
       loadSuku(selectedKategori)
     }
-    setRows([])
   }, [selectedKategori])
 
   useEffect(() => {
@@ -62,20 +64,29 @@ export default function RepairForm({ user }) {
   }
 
   const loadSuku = async (kat) => {
+    if (sukuList[kat]) return 
+    
     setLoading(true)
     try {
       const items = await window.api.getSukuByKategori(kat)
       
-      // MENGGABUNGKAN DATA BARU TANPA MENGHAPUS DATA LAMA
-      setSukuList(prev => {
-        const updated = { ...prev }
-        if (items && items.length > 0) {
+      setSukuList(prev => ({
+        ...prev,
+        [kat]: items || []
+      }))
+
+      if (items && items.length > 0) {
+        setAllSukuCache(prev => {
+          const updated = { ...prev }
           items.forEach(item => {
             updated[item.id_suku_cadang] = item
           })
-        }
-        return updated
-      })
+          return updated
+        })
+      }
+    } catch (err) {
+      console.error('Failed to load suku cadang', err)
+      setToast({ open: true, message: 'Gagal memuat data suku cadang', severity: 'error' })
     } finally {
       setLoading(false)
     }
@@ -93,16 +104,17 @@ export default function RepairForm({ user }) {
 
   const addRow = () => {
     if (!formReady || !selectedKategori) return
+    
+    // Membuat baris baru kosong
     setRows([...rows, { id_suku_cadang: '', kuantitas_dipakai: 1 }])
   }
 
   const updateRow = (idx, field, value) => {
     const copy = [...rows]
     const row = { ...copy[idx] }
-    if (field === 'id_suku_cadang') {
-      row[field] = value === '' ? '' : Number(value)
-    } else if (field === 'kuantitas_dipakai') {
-      row[field] = Number(value) || 0
+    
+    if (field === 'kuantitas_dipakai') {
+      row[field] = parseInt(value, 10) || 0
     } else {
       row[field] = value
     }
@@ -121,22 +133,14 @@ export default function RepairForm({ user }) {
       confirmButtonColor: '#d33',
       cancelButtonColor: '#555',
       confirmButtonText: 'Ya, hapus',
-      customClass: {
-        input: 'swal-dark-select'
-      },
+      customClass: { input: 'swal-dark-select' },
       willOpen: () => {
         if (!document.getElementById('swal-dark-select-style')) {
           const style = document.createElement('style');
           style.id = 'swal-dark-select-style';
           style.innerHTML = `
-            .swal-dark-select {
-              color: #000000 !important;
-              background-color: #FFFFFF !important;
-            }
-            .swal-dark-select option {
-              color: #000000 !important;
-              background-color: #FFFFFF !important;
-            }
+            .swal-dark-select { color: #000000 !important; background-color: #FFFFFF !important; }
+            .swal-dark-select option { color: #000000 !important; background-color: #FFFFFF !important; }
           `;
           document.head.appendChild(style);
         }
@@ -163,10 +167,15 @@ export default function RepairForm({ user }) {
         throw new Error('Tugas perbaikan tidak ditemukan untuk kendaraan ini')
       }
 
+      const sanitizedComponents = rows.map(r => ({
+        id_suku_cadang: r.id_suku_cadang,
+        kuantitas_dipakai: r.kuantitas_dipakai
+      }))
+
       const payload = {
         id_log,
         odometer_baru: parseInt(odometerBaru, 10),
-        components: rows
+        components: sanitizedComponents
       }
       await window.api.completeRepair(payload)
       setToast({ open: true, message: 'Perbaikan selesai dan disimpan', severity: 'success' })
@@ -218,18 +227,8 @@ export default function RepairForm({ user }) {
           </Alert>
         )}
 
-        {/* MENAMPILKAN KOTAK INFORMASI CATATAN KERUSAKAN JIKA ADA DATA */}
         {formReady && (catatanDariState || assignedTask?.catatan_kerusakan) && (
-          <Paper 
-            sx={{ 
-              backgroundColor: '#1E1E1E', 
-              p: 3, 
-              borderRadius: 3, 
-              mb: 3, 
-              boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)',
-              borderLeft: '5px solid #FFC107'
-            }}
-          >
+          <Paper sx={{ backgroundColor: '#1E1E1E', p: 3, borderRadius: 3, mb: 3, boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)', borderLeft: '5px solid #FFC107' }}>
             <Typography variant="subtitle1" sx={{ color: '#FFC107', fontWeight: 'bold', mb: 1 }}>
               Catatan Kerusakan / Keluhan:
             </Typography>
@@ -272,15 +271,9 @@ export default function RepairForm({ user }) {
             <Button 
               variant="outlined" 
               onClick={addRow} 
-              disabled={!formReady || (user?.role !== 'Kepala_Mekanik' && !assignedTask)}
+              disabled={!formReady || !selectedKategori || (user?.role !== 'Kepala_Mekanik' && !assignedTask)}
               sx={{
-                borderColor: '#FFC107',
-                color: '#FFC107',
-                textTransform: 'none',
-                fontWeight: 'bold',
-                py: 1.2,
-                px: 3,
-                borderRadius: 2,
+                borderColor: '#FFC107', color: '#FFC107', textTransform: 'none', fontWeight: 'bold', py: 1.2, px: 3, borderRadius: 2,
                 '&:hover': { borderColor: '#e0a800', backgroundColor: 'rgba(255,193,7,0.1)' },
                 '&:disabled': { borderColor: '#444', color: '#666' }
               }}
@@ -311,39 +304,31 @@ export default function RepairForm({ user }) {
                           sx={darkTextFieldStyle}
                           SelectProps={menuPropsStyle}
                         >
-                          {/* JIKA ID SUDAH DIPILIH, TAMPILKAN MENU ITEM DARI DATA YANG TERSIMPAN DI STATE MAP */}
-                          {r.id_suku_cadang && sukuList[r.id_suku_cadang] && (
+                          {/* PENGAMAN RENDERING TEXT BARIS LAMA AGAR TIDAK BLANK SAAT KATEGORI UTAMA DIUBAH */}
+                          {r.id_suku_cadang && allSukuCache[r.id_suku_cadang] && !(sukuList[selectedKategori] || []).some(s => String(s.id_suku_cadang) === String(r.id_suku_cadang)) && (
                             <MenuItem key={r.id_suku_cadang} value={r.id_suku_cadang}>
-                              {sukuList[r.id_suku_cadang].nama} (stok: {sukuList[r.id_suku_cadang].kuantitas_fisik})
+                              {allSukuCache[r.id_suku_cadang].nama} (stok: {allSukuCache[r.id_suku_cadang].kuantitas_fisik})
                             </MenuItem>
                           )}
-                          {/* TAMPILKAN JUGA OPSIONAL LAINNYA YANG ADA PADA STATE SEKARANG JIKA ID-NYA BERBEDA */}
-                          {Object.values(sukuList).map((s) => {
-                            if (s.id_suku_cadang === r.id_suku_cadang) return null;
-                            return (
-                              <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
-                                {s.nama} (stok: {s.kuantitas_fisik})
-                              </MenuItem>
-                            )
-                          })}
+
+                          {/* PERBAIKAN: List dropdown sekarang secara dinamis mengikuti selectedKategori yang sedang aktif */}
+                          {(sukuList[selectedKategori] || []).map((s) => (
+                            <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
+                              {s.nama} (stok: {s.kuantitas_fisik})
+                            </MenuItem>
+                          ))}
                         </TextField>
                       </TableCell>
                       <TableCell sx={{ borderBottom: '1px solid #333' }}>
                         <TextField
                           type="number"
                           value={r.kuantitas_dipakai}
-                          onChange={(e) =>
-                            updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))
-                          }
+                          onChange={(e) => updateRow(i, 'kuantitas_dipakai', e.target.value)}
                           sx={darkTextFieldStyle}
                         />
                       </TableCell>
                       <TableCell sx={{ borderBottom: '1px solid #333' }} align="center">
-                        <Button 
-                          color="error" 
-                          onClick={() => removeRow(i)}
-                          sx={{ textTransform: 'none', fontWeight: 'bold' }}
-                        >
+                        <Button color="error" onClick={() => removeRow(i)} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
                           Hapus
                         </Button>
                       </TableCell>
@@ -372,13 +357,7 @@ export default function RepairForm({ user }) {
               onClick={submit}
               disabled={!formReady || loading || (user?.role !== 'Kepala_Mekanik' && !assignedTask)}
               sx={{
-                px: 4,
-                py: 1.2,
-                backgroundColor: '#FFC107',
-                color: '#000',
-                fontWeight: 'bold',
-                textTransform: 'none',
-                borderRadius: 2,
+                px: 4, py: 1.2, backgroundColor: '#FFC107', color: '#000', fontWeight: 'bold', textTransform: 'none', borderRadius: 2,
                 boxShadow: '0px 4px 15px rgba(255, 193, 7, 0.3)',
                 '&:hover': { backgroundColor: '#e0a800' },
                 '&:disabled': { backgroundColor: '#444', color: '#888' }
@@ -389,16 +368,8 @@ export default function RepairForm({ user }) {
           </Box>
         </Paper>
 
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={6000}
-          onClose={() => setToast({ ...toast, open: false })}
-        >
-          <Alert 
-            severity={toast.severity}
-            onClose={() => setToast({ ...toast, open: false })}
-            sx={{ backgroundColor: toast.severity === 'success' ? '#1B5E20' : '#4A0000', color: '#FFF' }}
-          >
+        <Snackbar open={toast.open} autoHideDuration={6000} onClose={() => setToast({ ...toast, open: false })}>
+          <Alert severity={toast.severity} onClose={() => setToast({ ...toast, open: false })} sx={{ backgroundColor: toast.severity === 'success' ? '#1B5E20' : '#4A0000', color: '#FFF' }}>
             {toast.message}
           </Alert>
         </Snackbar>
