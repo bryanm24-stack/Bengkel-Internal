@@ -47,7 +47,9 @@ export default function RepairForm({ user }) {
   }, [])
 
   useEffect(() => {
-    if (selectedKategori) loadSuku(selectedKategori)
+    if (selectedKategori) {
+      loadSuku(selectedKategori)
+    }
   }, [selectedKategori])
 
   useEffect(() => {
@@ -101,13 +103,22 @@ export default function RepairForm({ user }) {
   }
 
   const addRow = () => {
-    if (!formReady) return
+    if (!formReady || !selectedKategori) return
+    
+    // Membuat baris baru kosong
     setRows([...rows, { id_suku_cadang: '', kuantitas_dipakai: 1 }])
   }
 
   const updateRow = (idx, field, value) => {
     const copy = [...rows]
-    copy[idx][field] = value
+    const row = { ...copy[idx] }
+    
+    if (field === 'kuantitas_dipakai') {
+      row[field] = parseInt(value, 10) || 0
+    } else {
+      row[field] = value
+    }
+    copy[idx] = row
     setRows(copy)
   }
 
@@ -333,50 +344,6 @@ export default function RepairForm({ user }) {
               </TableBody>
             </Table>
           </TableContainer>
-      <Box>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Komponen</TableCell>
-              <TableCell>Kuantitas</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((r, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <TextField
-                    select
-                    value={r.id_suku_cadang}
-                    onChange={(e) => updateRow(i, 'id_suku_cadang', e.target.value)}
-                  >
-                    {sukuList.map((s) => (
-                      <MenuItem key={s.id_suku_cadang} value={s.id_suku_cadang}>
-                        {s.nama} (stok: {s.kuantitas_fisik})
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    type="number"
-                    value={r.kuantitas_dipakai}
-                    onChange={(e) =>
-                      updateRow(i, 'kuantitas_dipakai', parseInt(e.target.value || 0, 10))
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => removeRow(i)}>
-                    Hapus
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
 
           {user?.role !== 'Kepala_Mekanik' && !assignedTask && formReady ? (
             <Alert severity="warning" sx={{ mb: 3, backgroundColor: '#e65100', color: '#FFF' }}>
