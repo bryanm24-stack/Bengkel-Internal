@@ -4,6 +4,67 @@ USE db_kampus_tutor_acs;
 -- Input: p_id_log INT, p_odometer_baru INT, p_components JSON
 -- p_components example: '[{"id_suku_cadang":1,"kuantitas_dipakai":2},{"id_suku_cadang":5,"kuantitas_dipakai":1}]'
 
+-- 1. Update SP_AssignRepairToMekanik untuk menerima parameter catatan
+DROP PROCEDURE IF EXISTS SP_AssignRepairToMekanik;
+DELIMITER //
+CREATE PROCEDURE SP_AssignRepairToMekanik(
+    IN p_nomor_polisi VARCHAR(64),
+    IN p_id_mekanik INT,
+    IN p_assigned_by INT,
+    IN p_catatan TEXT -- Parameter baru ditambahkan di sini
+)
+BEGIN
+  DECLARE v_exists INT DEFAULT 0;
+  DECLARE v_log_id INT DEFAULT NULL;
+
+  SELECT COUNT(*) INTO v_exists
+  FROM Log_Perbaikan
+  WHERE nomor_polisi = p_nomor_polisi AND status != 'Selesai';
+
+  IF v_exists > 0 THEN
+    SELECT id_log INTO v_log_id
+    FROM Log_Perbaikan
+    WHERE nomor_polisi = p_nomor_polisi AND status != 'Selesai'
+    ORDER BY assigned_at DESC
+    LIMIT 1;
+
+    UPDATE Log_Perbaikan
+    SET id_mekanik = p_id_mekanik,
+        assigned_by = p_assigned_by,
+        assigned_at = NOW(),
+        status = 'Diperbaiki',
+        catatan_kerusakan = p_catatan -- Menyimpan catatan
+    WHERE id_log = v_log_id;
+  ELSE
+    INSERT INTO Log_Perbaikan (nomor_polisi, id_mekanik, assigned_by, assigned_at, tanggal, status, catatan_kerusakan)
+    VALUES (p_nomor_polisi, p_id_mekanik, p_assigned_by, NOW(), NOW(), 'Diperbaiki', p_catatan); -- Menyimpan catatan
+    SELECT LAST_INSERT_ID() INTO v_log_id;
+  END IF;
+
+  UPDATE Kendaraan_Operasional
+  SET status = 'Diperbaiki'
+  WHERE nomor_polisi = p_nomor_polisi;
+END //
+DELIMITER ;
+
+
+-- 2. Update SP_GetKendaraanForMekanik agar mekanik bisa membaca catatannya
+DROP PROCEDURE IF EXISTS SP_GetKendaraanForMekanik;
+DELIMITER //
+CREATE PROCEDURE SP_GetKendaraanForMekanik(IN p_id_mekanik INT)
+BEGIN
+  SELECT ko.nomor_polisi, ko.tahun, ko.odometer, ko.status,
+         lp.id_log, lp.status AS repair_status, lp.assigned_at, lp.tanggal,
+         lp.catatan_kerusakan -- Mengambil kolom catatan
+  FROM Kendaraan_Operasional ko
+  JOIN Log_Perbaikan lp ON lp.nomor_polisi = ko.nomor_polisi
+  WHERE lp.id_mekanik = p_id_mekanik
+    AND lp.status != 'Selesai'
+  ORDER BY lp.assigned_at DESC;
+END //
+DELIMITER ;
+
+
 DROP PROCEDURE IF EXISTS SP_SelesaikanPerbaikan;
 DELIMITER //
 CREATE PROCEDURE SP_SelesaikanPerbaikan(

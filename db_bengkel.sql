@@ -16,7 +16,7 @@ CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_kampus_tutor_acs` /*!40100 DEFAULT C
 
 USE `db_kampus_tutor_acs`;
 
-
+ALTER TABLE Log_Perbaikan ADD COLUMN catatan_kerusakan TEXT;
 
 /* ===== Maintenance system tables ===== */
 
