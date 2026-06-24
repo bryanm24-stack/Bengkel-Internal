@@ -8,8 +8,13 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   waitForConnections: true,
-  connectionLimit: 10
+  connectionLimit: 10,
+  port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: true 
+  }
 })
+
 
 /* Student-related procedures removed: getStudents, getStudentReport */
 
