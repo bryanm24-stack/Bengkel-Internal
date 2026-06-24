@@ -1,17 +1,20 @@
 const mysql = require('mysql2/promise')
+const fs = require('fs') // 1. Tambahkan modul 'fs' untuk membaca file sertifikat
 import dotenv from 'dotenv'
 
 dotenv.config()
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT, // 2. WAJIB DITAMBAHKAN: Aiven menggunakan port khusus, bukan 3306
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
+  charset: 'utf8mb4_general_ci', // TAMBAHKAN BARIS INI
   password: process.env.DB_PASSWORD,
   waitForConnections: true,
   connectionLimit: 10,
-  port: process.env.DB_PORT,
+  // 3. TAMBAHKAN BAGIAN SSL INI (CARA B)
   ssl: {
-    rejectUnauthorized: true 
+    ca: fs.readFileSync('./ca.pem') 
   }
 })
 
