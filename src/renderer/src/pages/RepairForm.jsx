@@ -35,7 +35,8 @@ export default function RepairForm({ user }) {
   const [allSukuCache, setAllSukuCache] = useState({})
   
   const [rows, setRows] = useState([])
-  const [odometerBaru, setOdometerBaru] = useState('')
+  // const [odometerBaru, setOdometerBaru] = useState('')
+  const [form, setForm] = useState({  odometer: 0 })
   const [assignedTask, setAssignedTask] = useState(null)
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' })
@@ -172,11 +173,12 @@ export default function RepairForm({ user }) {
         kuantitas_dipakai: r.kuantitas_dipakai
       }))
 
-      const payload = {
-        id_log,
-        odometer_baru: parseInt(odometerBaru, 10),
-        components: sanitizedComponents
-      }
+      // const payload = {
+      //   id_log,
+      //   odometer_baru: parseInt(, 10),
+      //   components: sanitizedComponents
+      // }
+
       await window.api.completeRepair(payload)
       setToast({ open: true, message: 'Perbaikan selesai dan disimpan', severity: 'success' })
     } catch (err) {
@@ -235,12 +237,20 @@ export default function RepairForm({ user }) {
             <Typography variant="body1" sx={{ color: '#FFF', lineHeight: 1.5 }}>
               {catatanDariState || assignedTask?.catatan_kerusakan}
             </Typography>
+            <br />
+             <Typography variant="subtitle1" sx={{ color: '#FFC107', fontWeight: 'bold', mb: 1 }}>
+              Odomater :
+            </Typography>
+             <Typography variant="body1" sx={{ color: '#FFF', lineHeight: 1.5 }}>
+              {catatanDariState || assignedTask?.odometer}
+            </Typography>
+            
           </Paper>
         )}
 
         <Paper sx={{ backgroundColor: '#1E1E1E', p: 4, borderRadius: 3, boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)' }}>
           
-          <Box sx={{ my: 2 }}>
+          {/* <Box sx={{ my: 2 }}>
             <TextField
               label="Odometer Baru"
               value={odometerBaru}
@@ -249,7 +259,7 @@ export default function RepairForm({ user }) {
               disabled={!formReady}
               sx={{ minWidth: 240, ...darkTextFieldStyle }}
             />
-          </Box>
+          </Box> */}
 
           <Box sx={{ my: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <TextField

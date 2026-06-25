@@ -23,12 +23,11 @@ const pool = mysql.createPool({
 
 // New methods for maintenance system
 export const completeRepair = async (event, payload) => {
-  const { id_log, odometer_baru, components } = payload
+  const { id_log, components } = payload
   const compJson = JSON.stringify(components || [])
   try {
     const [rows] = await pool.query('CALL SP_SelesaikanPerbaikan(?,?,?)', [
       id_log,
-      odometer_baru,
       compJson
     ])
     return { success: true }
