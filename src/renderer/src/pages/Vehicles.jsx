@@ -146,7 +146,7 @@ export default function Vehicles({ user }) {
     try {
       // Mengirim catatan_kerusakan ke backend (Sesuai model.js yang diperbarui sebelumnya)
       await window.api.assignRepair({
-        nomor_polisi,
+        nomor_polisi,odometer,
         id_mekanik: result.value.id_mekanik,
         id_assigned_by: user.id_user,
         catatan_kerusakan: result.value.catatan 
