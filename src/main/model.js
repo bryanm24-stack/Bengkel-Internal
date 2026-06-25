@@ -18,7 +18,6 @@ const pool = mysql.createPool({
   }
 })
 
-
 /* Student-related procedures removed: getStudents, getStudentReport */
 
 // New methods for maintenance system
@@ -54,11 +53,13 @@ export const getCategories = async () => {
 export const addSukuCadang = async (event, payload) => {
   const { nama, kategori, kuantitas_fisik, batas_minimum } = payload
   try {
-    const [res] = await pool.query(
-      'INSERT INTO Suku_Cadang (nama,kategori,kuantitas_fisik,batas_minimum) VALUES (?,?,?,?)',
-      [nama, kategori, kuantitas_fisik || 0, batas_minimum || 0]
-    )
-    return { success: true, insertId: res.insertId }
+    await pool.query('CALL SP_AddSukuCadang(?,?,?,?)', [
+      nama, 
+      kategori, 
+      kuantitas_fisik || 0, 
+      batas_minimum || 0
+    ])
+    return { success: true }
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'DB insert error')
   }
@@ -67,11 +68,13 @@ export const addSukuCadang = async (event, payload) => {
 export const addKendaraan = async (event, payload) => {
   const { nomor_polisi, tahun, odometer, status } = payload
   try {
-    const [res] = await pool.query(
-      'INSERT INTO Kendaraan_Operasional (nomor_polisi,tahun,odometer,status) VALUES (?,?,?,?)',
-      [nomor_polisi, tahun || null, odometer || 0, status || 'Aktif']
-    )
-    return { success: true, insertId: res.insertId }
+    await pool.query('CALL SP_AddKendaraan(?,?,?,?)', [
+      nomor_polisi, 
+      tahun || null, 
+      odometer || 0, 
+      status || 'Aktif'
+    ])
+    return { success: true }
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'DB insert error')
   }
@@ -117,16 +120,11 @@ export const assignRepair = async (event, payload) => {
 export const addLogPerbaikan = async (event, payload) => {
   const { nomor_polisi, id_mekanik } = payload
   try {
-    const [res] = await pool.query(
-      'INSERT INTO Log_Perbaikan (nomor_polisi,id_mekanik,tanggal,status) VALUES (?,?,NOW(),?)',
-      [nomor_polisi, id_mekanik || null, 'Diperbaiki']
-    )
-    // Also set kendaraan status to Diperbaiki
-    await pool.query('UPDATE Kendaraan_Operasional SET status = ? WHERE nomor_polisi = ?', [
-      'Diperbaiki',
-      nomor_polisi
+    await pool.query('CALL SP_AddLogPerbaikan(?,?)', [
+      nomor_polisi, 
+      id_mekanik || null
     ])
-    return { success: true, insertId: res.insertId }
+    return { success: true }
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'DB insert error')
   }
@@ -134,10 +132,8 @@ export const addLogPerbaikan = async (event, payload) => {
 
 export const deleteKendaraan = async (event, nomor_polisi) => {
   try {
-    const [res] = await pool.query('DELETE FROM Kendaraan_Operasional WHERE nomor_polisi = ?', [
-      nomor_polisi
-    ])
-    if (res.affectedRows === 0) throw new Error('Kendaraan tidak ditemukan')
+    // Diubah menggunakan CALL
+    await pool.query('CALL SP_DeleteKendaraan(?)', [nomor_polisi])
     return { success: true }
   } catch (err) {
     // Foreign key restriction or other sql errors
@@ -180,4 +176,3 @@ export const login = async (event, username, password) => {
     throw new Error(err.sqlMessage || err.message || 'Login error')
   }
 }
-
