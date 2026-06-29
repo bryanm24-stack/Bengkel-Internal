@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 export default function AddMechanic() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    nama: '',
     username: '',
     password: ''
   })
@@ -22,8 +21,8 @@ export default function AddMechanic() {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
     
-    if (!formData.nama || !formData.username || !formData.password) {
-      return setToast({ open: true, message: 'Semua bidang wajib diisi', severity: 'warning' })
+    if (!formData.username || !formData.password) {
+      return setToast({ open: true, message: 'Semua wajib diisi', severity: 'warning' })
     }
 
     setLoading(true)
@@ -42,7 +41,6 @@ export default function AddMechanic() {
     }
   }
 
-  // Gaya input teks khusus Dark Mode dengan aksen Kuning Emas
   const darkTextFieldStyle = {
     '& .MuiInputLabel-root': { color: '#888' },
     '& .MuiInputLabel-root.Mui-focused': { color: '#FFC107' },
@@ -60,37 +58,26 @@ export default function AddMechanic() {
     <Box sx={{ backgroundColor: '#121212', minHeight: '100vh', color: '#FFFFFF', pt: 4, pb: 6 }}>
       <Container maxWidth="sm">
         
-        {/* Header Title diluar Card */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, borderBottom: '2px solid #2A2A2A', pb: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
             Tambah <span style={{ color: '#FFC107' }}>Mekanik</span>
           </Typography>
         </Box>
 
-        {/* Card Form Box Utama */}
         <Paper 
           sx={{ 
             backgroundColor: '#1E1E1E', 
             p: 4, 
             borderRadius: 3, 
             boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.4)',
-            borderTop: '5px solid #FFC107' // Garis atas kuning emas premium
+            borderTop: '5px solid #FFC107' 
           }}
         >
           <Typography variant="body2" sx={{ mb: 3, color: '#AAAAAA' }}>
-            Masukkan detail data akun dan profil mekanik baru di bawah ini.
+            Masukkan detail login akun mekanik baru di bawah ini.
           </Typography>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <TextField
-              label="Nama Lengkap"
-              name="nama"
-              placeholder="Contoh: Ahmad Yono"
-              value={formData.nama}
-              onChange={handleChange}
-              sx={darkTextFieldStyle}
-              fullWidth
-            />
             
             <TextField
               label="Username Akun"
@@ -113,7 +100,6 @@ export default function AddMechanic() {
               fullWidth
             />
 
-            {/* Actions Button (Tombol Kuning "Simpan" & Tombol Outline "Batal") */}
             <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
               <Button 
                 variant="contained" 
@@ -163,7 +149,6 @@ export default function AddMechanic() {
           </Box>
         </Paper>
 
-        {/* Toast Notifikasi */}
         <Snackbar
           open={toast.open}
           autoHideDuration={6000}
