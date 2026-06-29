@@ -17,7 +17,8 @@ import {
   getAssignedRepairByVehicle,
   assignRepair,
   addLogPerbaikan,
-  deleteKendaraan
+  deleteKendaraan,
+  addMechanic
 } from './model'
 import fs from 'fs'
 
@@ -86,6 +87,7 @@ app.whenReady().then(() => {
   ipcMain.handle('updateKendaraanStatus', updateKendaraanStatus)
   ipcMain.handle('addLogPerbaikan', addLogPerbaikan)
   ipcMain.handle('deleteKendaraan', deleteKendaraan)
+  ipcMain.handle('addMechanic', addMechanic)
 
   ipcMain.handle('printPDF', async (event) => {
     const { canceled, filePath: savePath } = await dialog.showSaveDialog({

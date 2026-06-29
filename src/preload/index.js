@@ -18,7 +18,8 @@ const api = {
   getKendaraanForMekanik: (id_user) => ipcRenderer.invoke('getKendaraanForMekanik', id_user),
   getAssignedRepairByVehicle: (payload) => ipcRenderer.invoke('getAssignedRepairByVehicle', payload),
   addLogPerbaikan: (payload) => ipcRenderer.invoke('addLogPerbaikan', payload),
-  deleteKendaraan: (nomor_polisi) => ipcRenderer.invoke('deleteKendaraan', nomor_polisi)
+  deleteKendaraan: (nomor_polisi) => ipcRenderer.invoke('deleteKendaraan', nomor_polisi),
+  addMechanic: (payload) => ipcRenderer.invoke('addMechanic', payload)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

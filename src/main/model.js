@@ -174,4 +174,22 @@ export const login = async (event, username, password) => {
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'Login error')
   }
+
+  // ... kode lama tetap ada ...
+
+export const addMechanic = async (event, payload) => {
+  const { nama, username, password } = payload
+  try {
+    // Memanggil Stored Procedure untuk menambah mekanik / user baru
+    await pool.query('CALL SP_AddMechanic(?,?,?)', [
+      nama,
+      username,
+      password
+    ])
+    return { success: true }
+  } catch (err) {
+    throw new Error(err.sqlMessage || err.message || 'DB insert mechanic error')
+  }
+}
+
 }

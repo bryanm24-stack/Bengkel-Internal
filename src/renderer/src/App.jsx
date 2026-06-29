@@ -7,6 +7,7 @@ import RepairForm from './pages/RepairForm'
 import Reports from './pages/Reports'
 import SpareParts from './pages/SpareParts'
 import AddVehicle from './pages/AddVehicle'
+import AddMechanic from './pages/AddMechanic' // <-- 1. Import halaman AddMechanic baru
 import MekanikDashboard from './pages/MekanikDashboard'
 import KepalaDashboard from './pages/KepalaDashboard'
 
@@ -45,7 +46,7 @@ export default function App() {
 
   return (
     <HashRouter>
-      {/* Navbar Container - Dark Mode Theme */}
+      
       <Box 
         className="no-print" 
         sx={{ 
@@ -92,6 +93,8 @@ export default function App() {
               <Button component={Link} to="/spareparts" sx={navButtonStyle}>
                 Suku Cadang
               </Button>
+              
+              {/* Tombol Tambah Kendaraan */}
               <Button 
                 variant="contained" 
                 component={Link} 
@@ -110,6 +113,27 @@ export default function App() {
                 }}
               >
                 + Tambah Kendaraan
+              </Button>
+
+              {/* 2. Tombol Tambah Mekanik Baru */}
+              <Button 
+                variant="outlined" 
+                component={Link} 
+                to="/mechanics/add" 
+                sx={{ 
+                  ml: 1,
+                  borderColor: '#FFC107',
+                  color: '#FFC107',
+                  fontWeight: 'bold',
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  '&:hover': {
+                    borderColor: '#e0a800',
+                    backgroundColor: 'rgba(255, 193, 7, 0.08)',
+                  }
+                }}
+              >
+                + Tambah Mekanik
               </Button>
             </>
           ) : null}
@@ -144,17 +168,22 @@ export default function App() {
           }
         />
         <Route path="/" element={<Vehicles user={user} />} />
+        
+        {/* Rute khusus Mekanik */}
         {user?.role !== 'Kepala_Mekanik' && (
           <>
             <Route path="/repairs" element={<RepairForm user={user} />} />
             <Route path="/repairs/:nomor_polisi" element={<RepairForm user={user} />} />
           </>
         )}
+        
+        {/* Rute khusus Kepala Mekanik */}
         {user?.role === 'Kepala_Mekanik' && (
           <>
             <Route path="/reports" element={<Reports user={user} />} />
             <Route path="/spareparts" element={<SpareParts />} />
             <Route path="/vehicles/add" element={<AddVehicle />} />
+            <Route path="/mechanics/add" element={<AddMechanic />} />
           </>
         )}
       </Routes>
