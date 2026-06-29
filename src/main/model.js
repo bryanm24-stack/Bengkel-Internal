@@ -1,51 +1,50 @@
-const mysql = require('mysql2/promise')
-const fs = require('fs') // 1. Tambahkan modul 'fs' untuk membaca file sertifikat
+import mysql from 'mysql2/promise'
+import fs from 'fs' 
 import dotenv from 'dotenv'
 
 dotenv.config()
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT, // 2. WAJIB DITAMBAHKAN: Aiven menggunakan port khusus, bukan 3306
+  port: process.env.DB_PORT, 
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
-  charset: 'utf8mb4_general_ci', // TAMBAHKAN BARIS INI
+  charset: 'utf8mb4_general_ci', 
   password: process.env.DB_PASSWORD,
   waitForConnections: true,
   connectionLimit: 10,
-  // 3. TAMBAHKAN BAGIAN SSL INI (CARA B)
   ssl: {
     ca: fs.readFileSync('./ca.pem') 
   }
 })
 
-/* Student-related procedures removed: getStudents, getStudentReport */
+// ==========================================
+// MAINTENANCE SYSTEM METHODS
+// ==========================================
 
-// New methods for maintenance system
 export const completeRepair = async (event, payload) => {
-  const { id_log, components } = payload
+  // 💡 PERBAIKAN: Menambahkan odometer_baru sesuai parameter SP_SelesaikanPerbaikan terbaru
+  const { id_log, odometer_baru, components } = payload
   const compJson = JSON.stringify(components || [])
   try {
     const [rows] = await pool.query('CALL SP_SelesaikanPerbaikan(?,?,?)', [
       id_log,
+      odometer_baru || 0,
       compJson
     ])
     return { success: true }
   } catch (err) {
-    // throw to be handled by renderer for toast display
     throw new Error(err.sqlMessage || err.message || 'Database error')
   }
 }
 
 export const getKendaraan = async () => {
   const [resultSets] = await pool.query('CALL SP_GetKendaraan()')
-  // mysql2 returns resultSets where first element is the rows array
   return Array.isArray(resultSets) && Array.isArray(resultSets[0]) ? resultSets[0] : resultSets
 }
 
 export const getCategories = async () => {
   const [resultSets] = await pool.query('CALL SP_GetCategories()')
-  const rows =
-    Array.isArray(resultSets) && Array.isArray(resultSets[0]) ? resultSets[0] : resultSets
+  const rows = Array.isArray(resultSets) && Array.isArray(resultSets[0]) ? resultSets[0] : resultSets
   return rows.map((r) => r.kategori)
 }
 
@@ -109,7 +108,12 @@ export const getAssignedRepairByVehicle = async (event, payload) => {
 export const assignRepair = async (event, payload) => {
   const { nomor_polisi, id_mekanik, id_assigned_by, catatan_kerusakan } = payload 
   try {
-    await pool.query('CALL SP_AssignRepairToMekanik(?,?,?,?)', [nomor_polisi, id_mekanik, id_assigned_by, catatan_kerusakan])
+    await pool.query('CALL SP_AssignRepairToMekanik(?,?,?,?)', [
+      nomor_polisi, 
+      id_mekanik, 
+      id_assigned_by, 
+      catatan_kerusakan
+    ])
     return { success: true }
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'DB assign error')
@@ -131,11 +135,9 @@ export const addLogPerbaikan = async (event, payload) => {
 
 export const deleteKendaraan = async (event, nomor_polisi) => {
   try {
-    // Diubah menggunakan CALL
     await pool.query('CALL SP_DeleteKendaraan(?)', [nomor_polisi])
     return { success: true }
   } catch (err) {
-    // Foreign key restriction or other sql errors
     if (err && err.code === 'ER_ROW_IS_REFERENCED_2') {
       throw new Error(
         'Kendaraan memiliki referensi log perbaikan; hapus atau batalkan log terlebih dahulu'
@@ -165,8 +167,7 @@ export const getReports = async () => {
 export const login = async (event, username, password) => {
   try {
     const [resultSets] = await pool.query('CALL SP_LoginUser(?,?)', [username, password])
-    const rows =
-      Array.isArray(resultSets) && Array.isArray(resultSets[0]) ? resultSets[0] : resultSets
+    const rows = Array.isArray(resultSets) && Array.isArray(resultSets[0]) ? resultSets[0] : resultSets
     if (!rows || rows.length === 0) {
       throw new Error('Invalid username or password')
     }
@@ -174,22 +175,24 @@ export const login = async (event, username, password) => {
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'Login error')
   }
-
-  // ... kode lama tetap ada ...
+}
 
 export const addMechanic = async (event, payload) => {
-  const { nama, username, password } = payload
+  const data = payload || {}
+  const usernameFix = data.username || data.user
+  const passwordFix = data.password || data.pass
+  const namaFix = data.nama || usernameFix
+
   try {
-    // Memanggil Stored Procedure untuk menambah mekanik / user baru
+    // 💡 CATATAN: Pastikan Anda sudah membuat SP_AddMechanic di database 
+    // untuk melakukan INSERT ke tabel `users` dengan default `id_role` milik Mekanik.
     await pool.query('CALL SP_AddMechanic(?,?,?)', [
-      nama,
-      username,
-      password
+      namaFix,
+      usernameFix,
+      passwordFix
     ])
     return { success: true }
   } catch (err) {
     throw new Error(err.sqlMessage || err.message || 'DB insert mechanic error')
   }
-}
-
 }

@@ -56,14 +56,11 @@ function createWindow() {
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
   // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -71,23 +68,25 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  // Maintenance system handlers
-  ipcMain.handle('completeRepair', completeRepair)
-  ipcMain.handle('getKendaraan', getKendaraan)
-  ipcMain.handle('getKendaraanForMekanik', getKendaraanForMekanik)
-  ipcMain.handle('getCategories', getCategories)
-  ipcMain.handle('getSukuByKategori', getSukuByKategori)
-  ipcMain.handle('getReports', getReports)
-  ipcMain.handle('login', login)
-  ipcMain.handle('getMechanics', getMechanics)
-  ipcMain.handle('assignRepair', assignRepair)
-  ipcMain.handle('getAssignedRepairByVehicle', getAssignedRepairByVehicle)
-  ipcMain.handle('addSukuCadang', addSukuCadang)
-  ipcMain.handle('addKendaraan', addKendaraan)
-  ipcMain.handle('updateKendaraanStatus', updateKendaraanStatus)
-  ipcMain.handle('addLogPerbaikan', addLogPerbaikan)
-  ipcMain.handle('deleteKendaraan', deleteKendaraan)
-  ipcMain.handle('addMechanic', addMechanic)
+  // ==========================================
+  // MAINTENANCE SYSTEM HANDLERS (SUDAH DIPERBAIKI)
+  // ==========================================
+  ipcMain.handle('completeRepair', (event, payload) => completeRepair(event, payload))
+  ipcMain.handle('getKendaraan', (event) => getKendaraan(event))
+  ipcMain.handle('getKendaraanForMekanik', (event, id_user) => getKendaraanForMekanik(event, id_user))
+  ipcMain.handle('getCategories', (event) => getCategories(event))
+  ipcMain.handle('getSukuByKategori', (event, kategori) => getSukuByKategori(event, kategori))
+  ipcMain.handle('getReports', (event) => getReports(event))
+  ipcMain.handle('login', (event, username, password) => login(event, username, password))
+  ipcMain.handle('getMechanics', (event) => getMechanics(event))
+  ipcMain.handle('assignRepair', (event, payload) => assignRepair(event, payload))
+  ipcMain.handle('getAssignedRepairByVehicle', (event, payload) => getAssignedRepairByVehicle(event, payload))
+  ipcMain.handle('addSukuCadang', (event, payload) => addSukuCadang(event, payload))
+  ipcMain.handle('addKendaraan', (event, payload) => addKendaraan(event, payload))
+  ipcMain.handle('updateKendaraanStatus', (event, payload) => updateKendaraanStatus(event, payload))
+  ipcMain.handle('addLogPerbaikan', (event, payload) => addLogPerbaikan(event, payload))
+  ipcMain.handle('deleteKendaraan', (event, nomor_polisi) => deleteKendaraan(event, nomor_polisi))
+  ipcMain.handle('addMechanic', (event, payload) => addMechanic(event, payload))
 
   ipcMain.handle('printPDF', async (event) => {
     const { canceled, filePath: savePath } = await dialog.showSaveDialog({
@@ -121,20 +120,12 @@ app.whenReady().then(() => {
   createWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
